@@ -17,7 +17,7 @@ pub struct BvhNode
 
 impl BvhNode
 {
-	fn new(mut objects: Vec<Box::<dyn Hittable>>, time0: f64, time1: f64) -> Self
+	pub fn new(mut objects: Vec<Box::<dyn Hittable>>, time0: f64, time1: f64) -> Self
 	{
 		let mut rng = rand::thread_rng();
 		let axis = f64::floor(rng.gen_range(0.0..3.0)) as u32;

@@ -68,7 +68,7 @@ impl Hittable for Sphere
 
 	fn bounding_box(&self, _time0: f64, _time1: f64) -> Option<Aabb>
 	{
-		Some(Aabb::new(self.center + Vec3d::newv(self.radius), self.center + Vec3d::newv(self.radius)))
+		Some(Aabb::new(self.center - Vec3d::newv(self.radius), self.center + Vec3d::newv(self.radius)))
 	}
 }
 
@@ -206,7 +206,7 @@ impl Hittable for Cylinder
 
 	fn bounding_box(&self, _time0: f64, _time1: f64) -> Option<Aabb>
 	{
-		Some(Aabb::new(self.center + Vec3d::newv(self.radius), self.center + Vec3d::newv(self.radius)))
+		Some(Aabb::new(self.center - Vec3d::newv(self.radius), self.center + Vec3d::newv(self.radius)))
 	}
 }
 
@@ -271,6 +271,6 @@ impl Hittable for Cone
 
 	fn bounding_box(&self, _time: f64, _time1: f64) -> Option<Aabb>
 	{
-		Some(Aabb::new(self.center + Vec3d::newv(self.radius), self.center + Vec3d::newv(self.radius)))
+		Some(Aabb::new(self.center - Vec3d::newv(self.radius), self.center + Vec3d::newv(self.radius)))
 	}
 }

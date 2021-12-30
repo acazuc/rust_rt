@@ -20,6 +20,7 @@ use rayon::prelude::*;
 use indicatif::{ProgressBar,ProgressStyle};
 use aabb::Aabb;
 use textures::{SolidColor,CheckerTexture};
+use bvh::BvhNode;
 
 fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Vec3d
 {
@@ -47,13 +48,14 @@ fn random_scene() -> HittableList
 {
 	let mut rng = rand::thread_rng();
 	let mut world = HittableList::new();
+	let mut objects: Vec::<Box::<dyn Hittable>> = Vec::new();
 
 	let ground_material: Arc::<dyn Material> = Arc::new(Lambertian::new(
 		Arc::new(CheckerTexture::new(
 			Arc::new(SolidColor::new(Vec3d::new(0.2, 0.3, 0.1))),
 			Arc::new(SolidColor::new(Vec3d::new(0.9, 0.9, 0.9)))
 	))));
-	world.add(Box::new(Sphere::new(Vec3d::new(0.0, -1000.0, 0.0), 1000.0, ground_material.clone())));
+	objects.push(Box::new(Sphere::new(Vec3d::new(0.0, -1000.0, 0.0), 1000.0, ground_material.clone())));
 
 	for a in -11..11
 	{
@@ -70,32 +72,55 @@ fn random_scene() -> HittableList
 					let albedo = Arc::new(SolidColor::new(Vec3d::random(0.0, 1.0) * Vec3d::random(0.0, 1.0)));
 					let material: Arc::<dyn Material> = Arc::new(Lambertian::new(albedo));
 					let center2 = center + Vec3d::new(0.0, rng.gen_range(0.0..0.5), 0.0);
-					world.add(Box::new(MovingSphere::new(center, center2, 0.0, 1.0, 0.2, material.clone())));
+					objects.push(Box::new(MovingSphere::new(center, center2, 0.0, 1.0, 0.2, material.clone())));
 				}
 				else if choose_mat < 0.95
 				{
 					let albedo = Vec3d::random(0.5, 1.0);
 					let fuzz = rng.gen_range(0.0..0.5);
 					let material: Arc::<dyn Material> = Arc::new(Metal::new(albedo, fuzz));
-					world.add(Box::new(Sphere::new(center, 0.2, material.clone())));
+					objects.push(Box::new(Sphere::new(center, 0.2, material.clone())));
 				}
 				else
 				{
 					let material: Arc::<dyn Material> = Arc::new(Dielectric::new(1.5));
-					world.add(Box::new(Sphere::new(center, 0.2, material.clone())));
+					objects.push(Box::new(Sphere::new(center, 0.2, material.clone())));
 				}
 			}
 		}
 	}
 
 	let m1: Arc::<dyn Material> = Arc::new(Dielectric::new(1.5));
-	world.add(Box::new(Sphere::new(Vec3d::new(0.0, 1.0, 0.0), 1.0, m1.clone())));
+	objects.push(Box::new(Sphere::new(Vec3d::new(0.0, 1.0, 0.0), 1.0, m1.clone())));
 
 	let m2: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.4, 0.2, 0.1)))));
-	world.add(Box::new(Sphere::new(Vec3d::new(-4.0, 1.0, 0.0), 1.0, m2.clone())));
+	objects.push(Box::new(Sphere::new(Vec3d::new(-4.0, 1.0, 0.0), 1.0, m2.clone())));
 
 	let m3: Arc::<dyn Material> = Arc::new(Metal::new(Vec3d::new(0.7, 0.6, 0.5), 0.0));
-	world.add(Box::new(Sphere::new(Vec3d::new(4.0, 1.0, 0.0), 1.0, m3.clone())));
+	objects.push(Box::new(Sphere::new(Vec3d::new(4.0, 1.0, 0.0), 1.0, m3.clone())));
+
+	world.add(Box::new(BvhNode::new(objects, 0.0, 1.0)));
+
+	world
+}
+
+fn two_spheres_scene() -> HittableList
+{
+	let mut rng = rand::thread_rng();
+	let mut world = HittableList::new();
+	let mut objects: Vec::<Box::<dyn Hittable>> = Vec::new();
+
+	let checker: Arc::<dyn Material> = Arc::new(Lambertian::new(
+		Arc::new(CheckerTexture::new(
+			Arc::new(SolidColor::new(Vec3d::new(0.2, 0.3, 0.1))),
+			Arc::new(SolidColor::new(Vec3d::new(0.9, 0.9, 0.9)))
+		))
+	));
+
+	objects.push(Box::new(Sphere::new(Vec3d::new(0.0, -10.0, 0.0), 10.0, checker.clone())));
+	objects.push(Box::new(Sphere::new(Vec3d::new(0.0,  10.0, 0.0), 10.0, checker.clone())));
+
+	world.add(Box::new(BvhNode::new(objects, 0.0, 1.0)));
 
 	world
 }
@@ -105,7 +130,7 @@ fn main()
 	let aspect_ratio: f64 = 16.0 / 9.0;
 	let width: u32 = 1920 * 2;
 	let height: u32 = (width as f64 / aspect_ratio) as u32;
-	let samples = 500;
+	let samples = 10;
 	let max_depth: i32 = 50;
 
 	let mut imgbuf = image::ImageBuffer::new(width, height);
@@ -121,6 +146,7 @@ fn main()
 	pb.set_style(ProgressStyle::default_bar().template("[{elapsed_precise}, ETA: {eta}] {wide_bar:} {msg}"));
 
 	let world = random_scene();
+	//let world = two_spheres_scene();
 
 	let mut pixels: Vec<u8> = vec![0; (width * height * 3) as usize];
 
