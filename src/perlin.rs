@@ -14,7 +14,6 @@ impl Perlin
 {
 	pub fn new() -> Self
 	{
-		let mut rng = rand::thread_rng();
 		let mut ranvec: Vec::<Vec3d> = Vec::with_capacity(256);
 		for _i in 0..256
 		{

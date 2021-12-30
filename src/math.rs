@@ -129,7 +129,7 @@ impl Vec3d
 		-ret
 	}
 
-	pub fn near_zero(&self) -> bool
+	pub fn near_zero(self) -> bool
 	{
 		self.v.iter().any(|a| f64::abs(*a) < f64::EPSILON)
 	}
@@ -161,22 +161,22 @@ where T: Copy
 		Self{v: [v, v, v, v]}
 	}
 
-	pub fn x(&self) -> T
+	pub fn x(self) -> T
 	{
 		self.v[0]
 	}
 
-	pub fn y(&self) -> T
+	pub fn y(self) -> T
 	{
 		self.v[1]
 	}
 
-	pub fn z(&self) -> T
+	pub fn z(self) -> T
 	{
 		self.v[2]
 	}
 
-	pub fn w(&self) -> T
+	pub fn w(self) -> T
 	{
 		self.v[3]
 	}
@@ -195,17 +195,17 @@ where T: Copy
 		Self{v: [v, v, v]}
 	}
 
-	pub fn x(&self) -> T
+	pub fn x(self) -> T
 	{
 		self.v[0]
 	}
 
-	pub fn y(&self) -> T
+	pub fn y(self) -> T
 	{
 		self.v[1]
 	}
 
-	pub fn z(&self) -> T
+	pub fn z(self) -> T
 	{
 		self.v[2]
 	}
@@ -235,12 +235,12 @@ where T: Copy
 		Self{v: [v, v]}
 	}
 
-	pub fn x(&self) -> T
+	pub fn x(self) -> T
 	{
 		self.v[0]
 	}
 
-	pub fn y(&self) -> T
+	pub fn y(self) -> T
 	{
 		self.v[1]
 	}
@@ -259,7 +259,7 @@ where T: Copy
 		Self{v: [v]}
 	}
 
-	pub fn x(&self) -> T
+	pub fn x(self) -> T
 	{
 		self.v[0]
 	}

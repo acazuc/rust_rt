@@ -13,7 +13,7 @@ use math::Vec3d;
 use ray::Ray;
 use hittable::{Hittable, HittableList};
 use objects::{Sphere,MovingSphere,Cylinder,Cone};
-use materials::{Material,Lambertian,Metal,Dielectric};
+use materials::{Material,Lambertian,Metal,Dielectric,DiffuseLight};
 use camera::Camera;
 use rand::Rng;
 use std::sync::Arc;
@@ -22,7 +22,7 @@ use indicatif::{ProgressBar,ProgressStyle};
 use textures::{SolidColor,CheckerTexture,NoiseTexture,ImageTexture};
 use bvh::BvhNode;
 
-fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Vec3d
+fn ray_color(r: &Ray, background: Vec3d, world: &dyn Hittable, depth: i32) -> Vec3d
 {
 	if depth <= 0
 	{
@@ -31,17 +31,16 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Vec3d
 
 	if let Some(rec) = world.hit(r, 0.001, f64::INFINITY)
 	{
+		let emitted = rec.material.emitted(rec.u, rec.v, rec.p);
 		if let Some(tuple) = rec.material.scatter(r, &rec)
 		{
-			return tuple.0 * ray_color(&tuple.1, world, depth - 1);
+			return tuple.0 * ray_color(&tuple.1, background, world, depth - 1);
 		}
 
-		return Vec3d::newv(0.0);
+		return emitted
 	}
 
-	let unit_direction = Vec3d::unit_vector(r.dir());
-	let t: f64 = 0.5 * (unit_direction.y() + 1.0);
-	Vec3d::newv(1.0) * (1.0 - t) + Vec3d::new(0.5, 0.7, 1.0) * t
+	background
 }
 
 fn random_scene() -> HittableList
@@ -67,14 +66,25 @@ fn random_scene() -> HittableList
 			if f64::sqrt(Vec3d::dot(tmp, tmp)) > 0.9
 			{
 				let choose_mat = rng.gen_range(0.0..1.0);
-				if choose_mat < 0.8
+				if choose_mat < 0.2
 				{
-					let albedo = Arc::new(SolidColor::new(Vec3d::random(0.0, 1.0) * Vec3d::random(0.0, 1.0)));
-					let material: Arc::<dyn Material> = Arc::new(Lambertian::new(albedo));
+					let albedo = Arc::new(SolidColor::new(Vec3d::random(0.0, 1.0) * Vec3d::random(0.0, 1.0) * 1.0));
+					let material: Arc::<dyn Material> = Arc::new(DiffuseLight::new(albedo));
 					let center2 = center + Vec3d::new(0.0, rng.gen_range(0.0..0.5), 0.0);
 					objects.push(Box::new(MovingSphere::new(center, center2, 0.0, 1.0, 0.2, material.clone())));
 				}
-				else if choose_mat < 0.95
+				else if choose_mat < 0.4
+				{
+					let material: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(ImageTexture::new("earthmap.jpg"))));
+					objects.push(Box::new(Sphere::new(center, 0.2, material.clone())));
+				}
+				else if choose_mat < 0.6
+				{
+					let albedo = Arc::new(NoiseTexture::new(Vec3d::random(0.0, 1.0) * Vec3d::random(0.0, 1.0) * 50.0, 4.0));
+					let material: Arc::<dyn Material> = Arc::new(DiffuseLight::new(albedo));
+					objects.push(Box::new(Sphere::new(center, 0.2, material.clone())));
+				}
+				else if choose_mat < 0.8
 				{
 					let albedo = Vec3d::random(0.5, 1.0);
 					let fuzz = rng.gen_range(0.0..0.5);
@@ -116,8 +126,8 @@ fn two_spheres_scene() -> HittableList
 		))
 	));*/
 
-	let mat_per: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(NoiseTexture::new(4.0))));
-	let mat_tex: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(ImageTexture::new("earthmap.jpg"))));
+	let mat_per: Arc::<dyn Material> = Arc::new(Metal::new(Vec3d::new(1.0, 0.2, 0.2), 0.5));
+	let mat_tex: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(ImageTexture::new("earthmap.jpg"))));
 
 	objects.push(Box::new(Sphere::new(Vec3d::new(0.0, -4.0, 0.0), 4.0, mat_per.clone())));
 	objects.push(Box::new(Sphere::new(Vec3d::new(0.0,  4.0, 0.0), 4.0, mat_tex.clone())));
@@ -130,9 +140,9 @@ fn two_spheres_scene() -> HittableList
 fn main()
 {
 	let aspect_ratio: f64 = 16.0 / 9.0;
-	let width: u32 = 512;
+	let width: u32 = 1920;
 	let height: u32 = (width as f64 / aspect_ratio) as u32;
-	let samples = 100;
+	let samples = 10000;
 	let max_depth: i32 = 50;
 
 	let mut imgbuf = image::ImageBuffer::new(width, height);
@@ -141,27 +151,28 @@ fn main()
 	let lookat = Vec3d::new(0.0, 0.0, 0.0);
 	let vup = Vec3d::new(0.0, 1.0, 0.0);
 	let dist_to_focus = 10.0;
-	let aperture = 0.1;
-	let camera = Camera::with_time(lookfrom, lookat, vup, 60.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+	let aperture = 0.25;
+	let camera = Camera::with_time(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+	let background = Vec3d::new(0.1, 0.1, 0.15);
 
 	let pb = ProgressBar::new(1);
 	pb.set_style(ProgressStyle::default_bar().template("[{elapsed_precise}, ETA: {eta}] {wide_bar:} {msg}"));
 
-	//let world = random_scene();
-	let world = two_spheres_scene();
+	let world = random_scene();
+	//let world = two_spheres_scene();
 
-	let mut pixels: Vec<u8> = vec![0; (width * height * 3) as usize];
+	let mut pixels: Vec<Vec3d> = vec![Vec3d::newv(0.0); (width * height) as usize];
 
 	pb.set_message("rendering");
 	pb.set_length((width * height) as u64);
-	pixels.par_chunks_mut(3).into_par_iter().enumerate().for_each(|(idx, pixel)|
+	pixels.par_iter_mut().enumerate().for_each(|(idx, pixel)|
 	{
 		let mut rng = rand::thread_rng();
 
 		let y = idx as u32 / width;
 		let x = idx as u32 % width;
 
-		let mut color = Vec3d::newv(0.0);
 		for _ in 0..samples
 		{
 			let u = (x as f64 + rng.gen_range(0.0..1.0)) / (width - 1) as f64;
@@ -169,16 +180,11 @@ fn main()
 
 			let ray = camera.get_ray(u, v);
 
-			color += ray_color(&ray, &world, max_depth);
+			*pixel += ray_color(&ray, background, &world, max_depth);
 		}
 
-		color /= samples as f64;
-		color = color.for_each(&f64::sqrt);
-		color *= 255.999;
-
-		pixel[0] = color.x() as u8;
-		pixel[1] = color.y() as u8;
-		pixel[2] = color.z() as u8;
+		*pixel /= samples as f64;
+		*pixel = pixel.for_each(&f64::sqrt);
 
 		pb.inc(1);
 	});
@@ -186,13 +192,13 @@ fn main()
 	pb.set_message("converting");
 	pb.set_length((width * height) as u64);
 	pb.reset();
-	pixels.chunks_mut(3).enumerate().for_each(|(idx, pix)|
+	pixels.iter().enumerate().for_each(|(idx, pix)|
 	{
 		let y = idx as u32 / width;
 		let x = idx as u32 % width;
 
 		let pixel = imgbuf.get_pixel_mut(x, height - y - 1);
-		*pixel = image::Rgb([pix[0], pix[1], pix[2]]);
+		*pixel = image::Rgb([(pix.x() * 255.0) as u8, (pix.y() * 255.0) as u8, (pix.z() * 255.0) as u8]);
 
 		pb.inc(1);
 	});

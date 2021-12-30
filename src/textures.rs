@@ -66,13 +66,14 @@ pub struct NoiseTexture
 {
 	noise: Perlin,
 	scale: f64,
+	color: Vec3d,
 }
 
 impl NoiseTexture
 {
-	pub fn new(scale: f64) -> Self
+	pub fn new(color: Vec3d, scale: f64) -> Self
 	{
-		Self{noise: Perlin::new(), scale}
+		Self{noise: Perlin::new(), scale, color}
 	}
 }
 
@@ -80,7 +81,7 @@ impl Texture for NoiseTexture
 {
 	fn value(&self, _u: f64, _v: f64, p: Vec3d) -> Vec3d
 	{
-		Vec3d::newv(1.0) * 0.5 * (1.0 + f64::sin(self.scale * p.z() + self.noise.turb(p * self.scale, 7) * 10.0))
+		self.color * 0.5 * (1.0 + f64::sin(self.scale * p.z() + self.noise.turb(p * self.scale, 7) * 10.0))
 	}
 }
 
