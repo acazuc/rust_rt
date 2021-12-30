@@ -28,7 +28,7 @@ impl HitRecord
 
 	pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vec3d)
 	{
-		self.front_face = Vec3d::dot(&r.dir(), outward_normal) < 0.0;
+		self.front_face = Vec3d::dot(r.dir(), *outward_normal) < 0.0;
 		if self.front_face
 		{
 			self.normal = *outward_normal;

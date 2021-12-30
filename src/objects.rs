@@ -38,9 +38,9 @@ impl Hittable for Sphere
 	fn hit(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<HitRecord>
 	{
 		let oc = r.orig() - self.center;
-		let a = Vec3d::dot(&r.dir(), &r.dir());
-		let half_b = Vec3d::dot(&oc, &r.dir());
-		let c = Vec3d::dot(&oc, &oc) - self.radius * self.radius;
+		let a = Vec3d::dot(r.dir(), r.dir());
+		let half_b = Vec3d::dot(oc, r.dir());
+		let c = Vec3d::dot(oc, oc) - self.radius * self.radius;
 		let d = half_b * half_b - a * c;
 		if d < 0.0
 		{
@@ -107,9 +107,9 @@ impl Hittable for MovingSphere
 	fn hit(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<HitRecord>
 	{
 		let oc = r.orig() - self.center(r.time());
-		let a = Vec3d::dot(&r.dir(), &r.dir());
-		let half_b = Vec3d::dot(&oc, &r.dir());
-		let c = Vec3d::dot(&oc, &oc) - self.radius * self.radius;
+		let a = Vec3d::dot(r.dir(), r.dir());
+		let half_b = Vec3d::dot(oc, r.dir());
+		let c = Vec3d::dot(oc, oc) - self.radius * self.radius;
 		let d = half_b * half_b - a * c;
 		if d < 0.0
 		{
@@ -175,9 +175,9 @@ impl Hittable for Cylinder
 		oc = Vec3d::new(oc.x(), 0.0, oc.z());
 		let mut rdir = r.dir();
 		rdir = Vec3d::new(rdir.x(), 0.0, rdir.z());
-		let a = Vec3d::dot(&rdir, &rdir);
-		let half_b = Vec3d::dot(&oc, &rdir);
-		let c = Vec3d::dot(&oc, &oc) - self.radius * self.radius;
+		let a = Vec3d::dot(rdir, rdir);
+		let half_b = Vec3d::dot(oc, rdir);
+		let c = Vec3d::dot(oc, oc) - self.radius * self.radius;
 		let d = half_b * half_b - a * c;
 		if d < 0.0
 		{
@@ -240,9 +240,9 @@ impl Hittable for Cone
 		let oc2 = Vec3d::new(oc.x(), -oc.y(), oc.z());
 		let rdir = r.dir();
 		let rdir2 = Vec3d::new(rdir.x(), -rdir.y(), rdir.z());
-		let a = Vec3d::dot(&rdir2, &rdir);
-		let half_b = Vec3d::dot(&oc, &rdir2);
-		let c = Vec3d::dot(&oc2, &oc) - self.radius * self.radius;
+		let a = Vec3d::dot(rdir2, rdir);
+		let half_b = Vec3d::dot(oc, rdir2);
+		let c = Vec3d::dot(oc2, oc) - self.radius * self.radius;
 		let d = half_b * half_b - a * c;
 		if d < 0.0
 		{

@@ -60,9 +60,9 @@ impl Material for Metal
 {
 	fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Vec3d, Ray)>
 	{
-		let reflected = Vec3d::unit_vector(&r.dir()).reflect(&rec.normal);
+		let reflected = Vec3d::reflect(Vec3d::unit_vector(r.dir()), rec.normal);
 		let scattered = Ray::with_time(rec.p, reflected + Vec3d::random_in_unit_sphere() * self.fuzz, r.time());
-		if scattered.dir().dot(&rec.normal) > 0.0
+		if Vec3d::dot(scattered.dir(), rec.normal) > 0.0
 		{
 			return Some((self.albedo, scattered));
 		}
@@ -105,27 +105,26 @@ impl Material for Dielectric
 			refraction_ratio = self.ir;
 		}
 
-		let unit_direction = Vec3d::unit_vector(&r.dir());
-		let munit_direction = -unit_direction;
+		let unit_direction = Vec3d::unit_vector(r.dir());
 
-		let cos_theta = f64::min(rec.normal.dot(&munit_direction), 1.0);
+		let cos_theta = f64::min(Vec3d::dot(rec.normal, -unit_direction), 1.0);
 		let sin_theta = f64::sqrt(1.0 - cos_theta * cos_theta);
 
 		let direction;
 		if refraction_ratio * sin_theta > 1.0
 		{
-			direction = unit_direction.reflect(&rec.normal);
+			direction = Vec3d::reflect(unit_direction, rec.normal);
 		}
 		else
 		{
 			let mut rng = rand::thread_rng();
 			if Dielectric::reflectance(cos_theta, refraction_ratio) > rng.gen_range(0.0..1.0)
 			{
-				direction = unit_direction.reflect(&rec.normal);
+				direction = Vec3d::reflect(unit_direction, rec.normal);
 			}
 			else
 			{
-				direction = unit_direction.refract(&rec.normal, refraction_ratio);
+				direction = Vec3d::refract(unit_direction, rec.normal, refraction_ratio);
 			}
 		}
 

@@ -33,12 +33,12 @@ where T: Default + Copy
 impl<T, const N: usize> VecN<T, N>
 where T: Mul<Output = T> + AddAssign + Default + Copy
 {
-	pub fn dot(&self, rhs: &Self) -> T
+	pub fn dot(lhs: Self, rhs: Self) -> T
 	{
 		let mut ret: T = T::default();
 		for i in 0..N
 		{
-			ret += self.v[i] * rhs.v[i];
+			ret += lhs.v[i] * rhs.v[i];
 		}
 		ret
 	}
@@ -75,9 +75,9 @@ pub(crate) type Vec3d = Vec3<f64>;
 
 impl Vec3d
 {
-	pub fn unit_vector(&self) -> Self
+	pub fn unit_vector(lhs: Self) -> Self
 	{
-		*self / f64::sqrt(self.dot(self))
+		lhs / f64::sqrt(Self::dot(lhs, lhs))
 	}
 
 	pub fn random(min: f64, max: f64) -> Self
@@ -91,7 +91,7 @@ impl Vec3d
 		loop
 		{
 			let v = Vec3d::random(-1.0, 1.0);
-			if v.dot(&v) >= 1.0
+			if Self::dot(v, v) >= 1.0
 			{
 				continue
 			}
@@ -102,7 +102,7 @@ impl Vec3d
 
 	pub fn random_unit_vector() -> Self
 	{
-		Vec3d::random_in_unit_sphere().unit_vector()
+		Self::unit_vector(Self::random_in_unit_sphere())
 	}
 
 	pub fn random_in_unit_disk() -> Self
@@ -111,17 +111,17 @@ impl Vec3d
 		loop
 		{
 			let p = Self::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
-			if p.dot(&p) < 1.0
+			if Self::dot(p, p) < 1.0
 			{
 				return p;
 			}
 		}
 	}
 
-	pub fn random_in_hemisphere(normal: &Self) -> Self
+	pub fn random_in_hemisphere(normal: Self) -> Self
 	{
 		let ret = Self::random_in_unit_sphere();
-		if ret.dot(normal) > 0.0
+		if Self::dot(ret, normal) > 0.0
 		{
 			return ret;
 		}
@@ -134,17 +134,16 @@ impl Vec3d
 		self.v.iter().any(|a| f64::abs(*a) < f64::EPSILON)
 	}
 
-	pub fn reflect(&self, rhs: &Self) -> Self
+	pub fn reflect(lhs: Self, rhs: Self) -> Self
 	{
-		*self - *rhs * self.dot(rhs) * 2.0
+		lhs - rhs * Self::dot(lhs, rhs) * 2.0
 	}
 
-	pub fn refract(&self, n: &Self, etai_over_etat: f64) -> Self
+	pub fn refract(lhs: Self, n: Self, etai_over_etat: f64) -> Self
 	{
-		let nuv = -*self;
-		let cos_theta = f64::min(n.dot(&nuv), 1.0);
-		let r_out_perp = (*self + *n * cos_theta) * etai_over_etat;
-		let r_out_parallel = *n * -f64::sqrt(f64::abs(1.0 - r_out_perp.dot(&r_out_perp)));
+		let cos_theta = f64::min(Self::dot(n, -lhs), 1.0);
+		let r_out_perp = (lhs + n * cos_theta) * etai_over_etat;
+		let r_out_parallel = n * -f64::sqrt(f64::abs(1.0 - Self::dot(r_out_perp, r_out_perp)));
 		r_out_perp + r_out_parallel
 	}
 }
@@ -215,11 +214,11 @@ where T: Copy
 impl<T> Vec3<T>
 where T: Copy + Mul<Output = T> + Sub<Output = T>
 {
-	pub fn cross(&self, rhs: &Self) -> Self
+	pub fn cross(lhs: Self, rhs: Self) -> Self
 	{
-		Self::new(self.v[1] * rhs.v[2] - self.v[2] * rhs.v[1],
-		          self.v[2] * rhs.v[0] - self.v[0] * rhs.v[2],
-		          self.v[0] * rhs.v[1] - self.v[1] * rhs.v[0])
+		Self::new(lhs.y() * rhs.z() - lhs.z() * rhs.y(),
+		          lhs.z() * rhs.x() - lhs.x() * rhs.z(),
+		          lhs.x() * rhs.y() - lhs.y() * rhs.x())
 	}
 }
 

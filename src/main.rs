@@ -7,6 +7,7 @@ mod materials;
 mod aabb;
 mod bvh;
 mod textures;
+mod perlin;
 
 use math::Vec3d;
 use ray::Ray;
@@ -18,8 +19,7 @@ use rand::Rng;
 use std::sync::Arc;
 use rayon::prelude::*;
 use indicatif::{ProgressBar,ProgressStyle};
-use aabb::Aabb;
-use textures::{SolidColor,CheckerTexture};
+use textures::{SolidColor,CheckerTexture,NoiseTexture,ImageTexture};
 use bvh::BvhNode;
 
 fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Vec3d
@@ -39,7 +39,7 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Vec3d
 		return Vec3d::newv(0.0);
 	}
 
-	let unit_direction = Vec3d::unit_vector(&r.dir());
+	let unit_direction = Vec3d::unit_vector(r.dir());
 	let t: f64 = 0.5 * (unit_direction.y() + 1.0);
 	Vec3d::newv(1.0) * (1.0 - t) + Vec3d::new(0.5, 0.7, 1.0) * t
 }
@@ -64,7 +64,7 @@ fn random_scene() -> HittableList
 			let center = Vec3d::new(a as f64 + 0.9 * rng.gen_range(0.0..1.0), 0.2, b as f64 + 0.9 * rng.gen_range(0.0..1.0));
 
 			let tmp = center - Vec3d::new(4.0, 0.2, 0.0);
-			if f64::sqrt(tmp.dot(&tmp)) > 0.9
+			if f64::sqrt(Vec3d::dot(tmp, tmp)) > 0.9
 			{
 				let choose_mat = rng.gen_range(0.0..1.0);
 				if choose_mat < 0.8
@@ -106,19 +106,21 @@ fn random_scene() -> HittableList
 
 fn two_spheres_scene() -> HittableList
 {
-	let mut rng = rand::thread_rng();
 	let mut world = HittableList::new();
 	let mut objects: Vec::<Box::<dyn Hittable>> = Vec::new();
 
-	let checker: Arc::<dyn Material> = Arc::new(Lambertian::new(
+	/*let mat: Arc::<dyn Material> = Arc::new(Lambertian::new(
 		Arc::new(CheckerTexture::new(
 			Arc::new(SolidColor::new(Vec3d::new(0.2, 0.3, 0.1))),
 			Arc::new(SolidColor::new(Vec3d::new(0.9, 0.9, 0.9)))
 		))
-	));
+	));*/
 
-	objects.push(Box::new(Sphere::new(Vec3d::new(0.0, -10.0, 0.0), 10.0, checker.clone())));
-	objects.push(Box::new(Sphere::new(Vec3d::new(0.0,  10.0, 0.0), 10.0, checker.clone())));
+	let mat_per: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(NoiseTexture::new(4.0))));
+	let mat_tex: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(ImageTexture::new("earthmap.jpg"))));
+
+	objects.push(Box::new(Sphere::new(Vec3d::new(0.0, -4.0, 0.0), 4.0, mat_per.clone())));
+	objects.push(Box::new(Sphere::new(Vec3d::new(0.0,  4.0, 0.0), 4.0, mat_tex.clone())));
 
 	world.add(Box::new(BvhNode::new(objects, 0.0, 1.0)));
 
@@ -128,9 +130,9 @@ fn two_spheres_scene() -> HittableList
 fn main()
 {
 	let aspect_ratio: f64 = 16.0 / 9.0;
-	let width: u32 = 1920 * 2;
+	let width: u32 = 512;
 	let height: u32 = (width as f64 / aspect_ratio) as u32;
-	let samples = 10;
+	let samples = 100;
 	let max_depth: i32 = 50;
 
 	let mut imgbuf = image::ImageBuffer::new(width, height);
@@ -140,13 +142,13 @@ fn main()
 	let vup = Vec3d::new(0.0, 1.0, 0.0);
 	let dist_to_focus = 10.0;
 	let aperture = 0.1;
-	let camera = Camera::with_time(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+	let camera = Camera::with_time(lookfrom, lookat, vup, 60.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
 	let pb = ProgressBar::new(1);
 	pb.set_style(ProgressStyle::default_bar().template("[{elapsed_precise}, ETA: {eta}] {wide_bar:} {msg}"));
 
-	let world = random_scene();
-	//let world = two_spheres_scene();
+	//let world = random_scene();
+	let world = two_spheres_scene();
 
 	let mut pixels: Vec<u8> = vec![0; (width * height * 3) as usize];
 
