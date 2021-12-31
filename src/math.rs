@@ -73,9 +73,16 @@ pub(crate) type Vec3u = Vec3<u32>;
 pub(crate) type Vec3f = Vec3<f32>;
 pub(crate) type Vec3d = Vec3<f64>;
 
+pub(crate) type Vec2b = Vec2<u8>;
+pub(crate) type Vec2s = Vec2<i16>;
+pub(crate) type Vec2i = Vec2<i32>;
+pub(crate) type Vec2u = Vec2<u32>;
+pub(crate) type Vec2f = Vec2<f32>;
+pub(crate) type Vec2d = Vec2<f64>;
+
 impl Vec3d
 {
-	pub fn unit_vector(lhs: Self) -> Self
+	pub fn normalize(lhs: Self) -> Self
 	{
 		lhs / f64::sqrt(Self::dot(lhs, lhs))
 	}
@@ -102,7 +109,7 @@ impl Vec3d
 
 	pub fn random_unit_vector() -> Self
 	{
-		Self::unit_vector(Self::random_in_unit_sphere())
+		Self::normalize(Self::random_in_unit_sphere())
 	}
 
 	pub fn random_in_unit_disk() -> Self

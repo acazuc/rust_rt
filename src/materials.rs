@@ -1,6 +1,6 @@
 use crate::ray::Ray;
 
-use crate::math::Vec3d;
+use crate::math::{Vec3d,Vec2d};
 
 use crate::hittable::HitRecord;
 
@@ -13,7 +13,7 @@ use rand::Rng;
 pub trait Material: Send + Sync
 {
 	fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Vec3d, Ray)>;
-	fn emitted(&self, _u: f64, _v: f64, _p: Vec3d) -> Vec3d
+	fn emitted(&self, _uv: Vec2d, _p: Vec3d) -> Vec3d
 	{
 		Vec3d::newv(0.0)
 	}
@@ -42,7 +42,7 @@ impl Material for Lambertian
 			scatter_direction = rec.normal;
 		}
 
-		Some((self.albedo.value(rec.u, rec.v, rec.p), Ray::with_time(rec.p, scatter_direction, r.time())))
+		Some((self.albedo.value(rec.uv, rec.p), Ray::with_time(rec.p, scatter_direction, r.time())))
 	}
 }
 
@@ -64,7 +64,7 @@ impl Material for Metal
 {
 	fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Vec3d, Ray)>
 	{
-		let reflected = Vec3d::reflect(Vec3d::unit_vector(r.dir()), rec.normal);
+		let reflected = Vec3d::reflect(Vec3d::normalize(r.dir()), rec.normal);
 		let scattered = Ray::with_time(rec.p, reflected + Vec3d::random_in_unit_sphere() * self.fuzz, r.time());
 		if Vec3d::dot(scattered.dir(), rec.normal) > 0.0
 		{
@@ -109,7 +109,7 @@ impl Material for Dielectric
 			refraction_ratio = self.ir;
 		}
 
-		let unit_direction = Vec3d::unit_vector(r.dir());
+		let unit_direction = Vec3d::normalize(r.dir());
 
 		let cos_theta = f64::min(Vec3d::dot(rec.normal, -unit_direction), 1.0);
 		let sin_theta = f64::sqrt(1.0 - cos_theta * cos_theta);
@@ -156,8 +156,8 @@ impl Material for DiffuseLight
 		None
 	}
 
-	fn emitted(&self, u: f64, v: f64, p: Vec3d) -> Vec3d
+	fn emitted(&self, uv: Vec2d, p: Vec3d) -> Vec3d
 	{
-		self.emit.value(u, v, p)
+		self.emit.value(uv, p)
 	}
 }

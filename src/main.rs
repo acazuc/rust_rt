@@ -9,10 +9,10 @@ mod bvh;
 mod textures;
 mod perlin;
 
-use math::Vec3d;
+use math::{Vec3d};
 use ray::Ray;
 use hittable::{Hittable, HittableList};
-use objects::{Sphere,MovingSphere,Cylinder,Cone};
+use objects::{Sphere,MovingSphere,Cylinder,Cone,Triangle,Wavefront};
 use materials::{Material,Lambertian,Metal,Dielectric,DiffuseLight};
 use camera::Camera;
 use rand::Rng;
@@ -31,7 +31,7 @@ fn ray_color(r: &Ray, background: Vec3d, world: &dyn Hittable, depth: i32) -> Ve
 
 	if let Some(rec) = world.hit(r, 0.001, f64::INFINITY)
 	{
-		let emitted = rec.material.emitted(rec.u, rec.v, rec.p);
+		let emitted = rec.material.emitted(rec.uv, rec.p);
 		if let Some(tuple) = rec.material.scatter(r, &rec)
 		{
 			return tuple.0 * ray_color(&tuple.1, background, world, depth - 1);
@@ -47,14 +47,14 @@ fn random_scene() -> HittableList
 {
 	let mut rng = rand::thread_rng();
 	let mut world = HittableList::new();
-	let mut objects: Vec::<Box::<dyn Hittable>> = Vec::new();
+	let mut objects: Vec::<Arc::<dyn Hittable>> = Vec::new();
 
 	let ground_material: Arc::<dyn Material> = Arc::new(Lambertian::new(
 		Arc::new(CheckerTexture::new(
 			Arc::new(SolidColor::new(Vec3d::new(0.2, 0.3, 0.1))),
 			Arc::new(SolidColor::new(Vec3d::new(0.9, 0.9, 0.9)))
 	))));
-	objects.push(Box::new(Sphere::new(Vec3d::new(0.0, -1000.0, 0.0), 1000.0, ground_material.clone())));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0, -1000.0, 0.0), 1000.0, ground_material.clone())));
 
 	for a in -11..11
 	{
@@ -71,45 +71,54 @@ fn random_scene() -> HittableList
 					let albedo = Arc::new(SolidColor::new(Vec3d::random(0.0, 1.0) * Vec3d::random(0.0, 1.0) * 1.0));
 					let material: Arc::<dyn Material> = Arc::new(DiffuseLight::new(albedo));
 					let center2 = center + Vec3d::new(0.0, rng.gen_range(0.0..0.5), 0.0);
-					objects.push(Box::new(MovingSphere::new(center, center2, 0.0, 1.0, 0.2, material.clone())));
+					objects.push(Arc::new(MovingSphere::new(center, center2, 0.0, 1.0, 0.2, material.clone())));
 				}
-				else if choose_mat < 0.4
+				else if choose_mat < 0.3
 				{
 					let material: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(ImageTexture::new("earthmap.jpg"))));
-					objects.push(Box::new(Sphere::new(center, 0.2, material.clone())));
+					objects.push(Arc::new(Sphere::new(center, 0.2, material.clone())));
 				}
 				else if choose_mat < 0.6
 				{
 					let albedo = Arc::new(NoiseTexture::new(Vec3d::random(0.0, 1.0) * Vec3d::random(0.0, 1.0) * 50.0, 4.0));
 					let material: Arc::<dyn Material> = Arc::new(DiffuseLight::new(albedo));
-					objects.push(Box::new(Sphere::new(center, 0.2, material.clone())));
+					objects.push(Arc::new(Sphere::new(center, 0.2, material.clone())));
 				}
 				else if choose_mat < 0.8
 				{
 					let albedo = Vec3d::random(0.5, 1.0);
 					let fuzz = rng.gen_range(0.0..0.5);
 					let material: Arc::<dyn Material> = Arc::new(Metal::new(albedo, fuzz));
-					objects.push(Box::new(Sphere::new(center, 0.2, material.clone())));
+					objects.push(Arc::new(Sphere::new(center, 0.2, material.clone())));
 				}
 				else
 				{
 					let material: Arc::<dyn Material> = Arc::new(Dielectric::new(1.5));
-					objects.push(Box::new(Sphere::new(center, 0.2, material.clone())));
+					objects.push(Arc::new(Sphere::new(center, 0.2, material.clone())));
 				}
 			}
 		}
 	}
 
 	let m1: Arc::<dyn Material> = Arc::new(Dielectric::new(1.5));
-	objects.push(Box::new(Sphere::new(Vec3d::new(0.0, 1.0, 0.0), 1.0, m1.clone())));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0, 1.0, 0.0), 1.0, m1.clone())));
 
 	let m2: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.4, 0.2, 0.1)))));
-	objects.push(Box::new(Sphere::new(Vec3d::new(-4.0, 1.0, 0.0), 1.0, m2.clone())));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(-4.0, 1.0, 0.0), 1.0, m2.clone())));
 
 	let m3: Arc::<dyn Material> = Arc::new(Metal::new(Vec3d::new(0.7, 0.6, 0.5), 0.0));
-	objects.push(Box::new(Sphere::new(Vec3d::new(4.0, 1.0, 0.0), 1.0, m3.clone())));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(4.0, 1.0, 0.0), 1.0, m3.clone())));
 
-	world.add(Box::new(BvhNode::new(objects, 0.0, 1.0)));
+	let ma: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(SolidColor::new(Vec3d::new(1.0, 0.0, 0.0)))));
+	/*objects.push(Arc::new(Triangle::new(
+		[Vec3d::new(1.0, 1.0, 1.0), Vec3d::new(0.0, 0.0, 1.0), Vec3d::new(2.0, 0.0, 0.0)],
+		[Vec2d::new(0.0, 0.0), Vec2d::new(0.0, 1.0), Vec2d::new(1.0, 1.0)],
+		ma
+	)));*/
+
+	objects.push(Arc::new(Wavefront::new("cessna.obj", Vec3d::new(-3.0, 1.0, 3.0), Vec3d::newv(1.0 / 10.0))));
+
+	world.add(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
 
 	world
 }
@@ -117,7 +126,7 @@ fn random_scene() -> HittableList
 fn two_spheres_scene() -> HittableList
 {
 	let mut world = HittableList::new();
-	let mut objects: Vec::<Box::<dyn Hittable>> = Vec::new();
+	let mut objects: Vec::<Arc::<dyn Hittable>> = Vec::new();
 
 	/*let mat: Arc::<dyn Material> = Arc::new(Lambertian::new(
 		Arc::new(CheckerTexture::new(
@@ -129,10 +138,10 @@ fn two_spheres_scene() -> HittableList
 	let mat_per: Arc::<dyn Material> = Arc::new(Metal::new(Vec3d::new(1.0, 0.2, 0.2), 0.5));
 	let mat_tex: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(ImageTexture::new("earthmap.jpg"))));
 
-	objects.push(Box::new(Sphere::new(Vec3d::new(0.0, -4.0, 0.0), 4.0, mat_per.clone())));
-	objects.push(Box::new(Sphere::new(Vec3d::new(0.0,  4.0, 0.0), 4.0, mat_tex.clone())));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0, -4.0, 0.0), 4.0, mat_per.clone())));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0,  4.0, 0.0), 4.0, mat_tex.clone())));
 
-	world.add(Box::new(BvhNode::new(objects, 0.0, 1.0)));
+	world.add(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
 
 	world
 }
@@ -142,19 +151,20 @@ fn main()
 	let aspect_ratio: f64 = 16.0 / 9.0;
 	let width: u32 = 1920;
 	let height: u32 = (width as f64 / aspect_ratio) as u32;
-	let samples = 10000;
+	let samples = 1000;
 	let max_depth: i32 = 50;
 
 	let mut imgbuf = image::ImageBuffer::new(width, height);
 
-	let lookfrom = Vec3d::new(13.0, 2.0, 3.0);
-	let lookat = Vec3d::new(0.0, 0.0, 0.0);
+	let lookfrom = Vec3d::new(-13.0, 5.0, 5.0);
+	let lookat = Vec3d::new(-2.0, 0.0, 3.0);
 	let vup = Vec3d::new(0.0, 1.0, 0.0);
 	let dist_to_focus = 10.0;
-	let aperture = 0.25;
+	let aperture = 0.1; //25;
 	let camera = Camera::with_time(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
-	let background = Vec3d::new(0.1, 0.1, 0.15);
+	//let background = Vec3d::new(0.5, 0.5, 0.75);
+	let background = Vec3d::new(0.0, 0.0, 0.0);
 
 	let pb = ProgressBar::new(1);
 	pb.set_style(ProgressStyle::default_bar().template("[{elapsed_precise}, ETA: {eta}] {wide_bar:} {msg}"));

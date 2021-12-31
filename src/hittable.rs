@@ -1,4 +1,4 @@
-use crate::math::Vec3d;
+use crate::math::{Vec3d,Vec2d};
 
 use crate::ray::Ray;
 
@@ -13,35 +13,30 @@ pub struct HitRecord
 	pub p: Vec3d,
 	pub normal: Vec3d,
 	pub t: f64,
-	pub u: f64,
-	pub v: f64,
+	pub uv: Vec2d,
 	pub front_face: bool,
 	pub material: Arc::<dyn Material>,
 }
 
 impl HitRecord
 {
-	pub fn new(p: Vec3d, t: f64, u: f64, v: f64, material: Arc::<dyn Material>) -> Self
+	pub fn new(r: &Ray, p: Vec3d, t: f64, uv: Vec2d, n: Vec3d, material: Arc::<dyn Material>) -> Self
 	{
-		Self{p: p, normal: Vec3d::default(), t: t, u: u, v: v, front_face: bool::default(), material: material}
-	}
-
-	pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vec3d)
-	{
-		self.front_face = Vec3d::dot(r.dir(), *outward_normal) < 0.0;
-		if self.front_face
+		let normal;
+		let front_face = Vec3d::dot(r.dir(), n) < 0.0;
+		if front_face
 		{
-			self.normal = *outward_normal;
+			normal = n;
 		}
 		else
 		{
-			let a = *outward_normal;
-			self.normal = -a;
+			normal = -n;
 		}
+		Self{p, normal, t, uv, front_face, material}
 	}
 }
 
-pub trait Hittable : Sync
+pub trait Hittable : Sync + Send
 {
 	fn hit(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<HitRecord>;
 	fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb>;
@@ -49,7 +44,7 @@ pub trait Hittable : Sync
 
 pub struct HittableList
 {
-	objects: Vec<Box::<dyn Hittable>>,
+	objects: Vec<Arc::<dyn Hittable>>,
 }
 
 impl HittableList
@@ -59,7 +54,7 @@ impl HittableList
 		HittableList{objects: Vec::default()}
 	}
 
-	pub fn add(&mut self, object: Box::<dyn Hittable>)
+	pub fn add(&mut self, object: Arc::<dyn Hittable>)
 	{
 		self.objects.push(object)
 	}

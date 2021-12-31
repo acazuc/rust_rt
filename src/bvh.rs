@@ -8,16 +8,18 @@ use rand::Rng;
 
 use std::cmp::Ordering;
 
+use std::sync::Arc;
+
 pub struct BvhNode
 {
-	left: Option<Box::<dyn Hittable>>,
-	right: Option<Box::<dyn Hittable>>,
+	left: Option<Arc::<dyn Hittable>>,
+	right: Option<Arc::<dyn Hittable>>,
 	aabb: Aabb,
 }
 
 impl BvhNode
 {
-	pub fn new(mut objects: Vec<Box::<dyn Hittable>>, time0: f64, time1: f64) -> Self
+	pub fn new(mut objects: Vec<Arc::<dyn Hittable>>, time0: f64, time1: f64) -> Self
 	{
 		let mut rng = rand::thread_rng();
 		let axis = f64::floor(rng.gen_range(0.0..3.0)) as u32;
@@ -35,9 +37,10 @@ impl BvhNode
 			2 => (Some(objects.remove(0)), Some(objects.remove(0))),
 			_ => 
 			{
-				let objects_left = objects.drain(0..objects.len() / 2).collect();
-				let tmp1: Box::<dyn Hittable> = Box::new(BvhNode::new(objects_left, time0, time1));
-				let tmp2: Box::<dyn Hittable> = Box::new(BvhNode::new(objects, time0, time1));
+				let mid = objects.len() / 2;
+				let objects_left = objects.drain(0..mid).collect();
+				let tmp1: Arc::<dyn Hittable> = Arc::new(BvhNode::new(objects_left, time0, time1));
+				let tmp2: Arc::<dyn Hittable> = Arc::new(BvhNode::new(objects, time0, time1));
 				(
 					Some(tmp1),
 					Some(tmp2),
@@ -71,7 +74,7 @@ impl BvhNode
 		Self{left, right, aabb}
 	}
 
-	fn box_compare(a: &Box::<dyn Hittable>, b: &Box::<dyn Hittable>, axis: usize) -> Ordering
+	fn box_compare(a: &Arc::<dyn Hittable>, b: &Arc::<dyn Hittable>, axis: usize) -> Ordering
 	{
 		match (a.bounding_box(0.0, 0.0), b.bounding_box(0.0, 0.0))
 		{
@@ -92,17 +95,17 @@ impl BvhNode
 		}
 	}
 
-	fn box_x_compare(a: &Box::<dyn Hittable>, b: &Box::<dyn Hittable>) -> Ordering
+	fn box_x_compare(a: &Arc::<dyn Hittable>, b: &Arc::<dyn Hittable>) -> Ordering
 	{
 		return Self::box_compare(a, b, 0);
 	}
 
-	fn box_y_compare(a: &Box::<dyn Hittable>, b: &Box::<dyn Hittable>) -> Ordering
+	fn box_y_compare(a: &Arc::<dyn Hittable>, b: &Arc::<dyn Hittable>) -> Ordering
 	{
 		return Self::box_compare(a, b, 1);
 	}
 
-	fn box_z_compare(a: &Box::<dyn Hittable>, b: &Box::<dyn Hittable>) -> Ordering
+	fn box_z_compare(a: &Arc::<dyn Hittable>, b: &Arc::<dyn Hittable>) -> Ordering
 	{
 		return Self::box_compare(a, b, 2);
 	}

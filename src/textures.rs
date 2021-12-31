@@ -1,4 +1,4 @@
-use crate::math::Vec3d;
+use crate::math::{Vec2d,Vec3d};
 
 use std::sync::Arc;
 
@@ -8,7 +8,7 @@ use image::GenericImageView;
 
 pub trait Texture: Sync + Send
 {
-	fn value(&self, u: f64, v: f64, p: Vec3d) -> Vec3d;
+	fn value(&self, uv: Vec2d, p: Vec3d) -> Vec3d;
 }
 
 pub struct SolidColor
@@ -26,7 +26,7 @@ impl SolidColor
 
 impl Texture for SolidColor
 {
-	fn value(&self, _u: f64, _v: f64, _p: Vec3d) -> Vec3d
+	fn value(&self, _uv: Vec2d, _p: Vec3d) -> Vec3d
 	{
 		self.color
 	}
@@ -48,16 +48,16 @@ impl CheckerTexture
 
 impl Texture for CheckerTexture
 {
-	fn value(&self, u: f64, v: f64, p: Vec3d) -> Vec3d
+	fn value(&self, uv: Vec2d, p: Vec3d) -> Vec3d
 	{
 		let sines = f64::sin(10.0 * p.x()) * f64::sin(10.0 * p.y()) * f64::sin(10.0 * p.z());
 		if sines < 0.0
 		{
-			self.odd.value(u, v, p)
+			self.odd.value(uv, p)
 		}
 		else
 		{
-			self.even.value(u, v, p)
+			self.even.value(uv, p)
 		}
 	}
 }
@@ -79,7 +79,7 @@ impl NoiseTexture
 
 impl Texture for NoiseTexture
 {
-	fn value(&self, _u: f64, _v: f64, p: Vec3d) -> Vec3d
+	fn value(&self, _vu: Vec2d, p: Vec3d) -> Vec3d
 	{
 		self.color * 0.5 * (1.0 + f64::sin(self.scale * p.z() + self.noise.turb(p * self.scale, 7) * 10.0))
 	}
@@ -111,10 +111,10 @@ impl ImageTexture
 
 impl Texture for ImageTexture
 {
-	fn value(&self, u: f64, v: f64, _p: Vec3d) -> Vec3d
+	fn value(&self, uv: Vec2d, _p: Vec3d) -> Vec3d
 	{
-		let uu = f64::clamp(u, 0.0, 1.0);
-		let vv = 1.0 - f64::clamp(v, 0.0, 1.0);
+		let uu = f64::clamp(uv.x(), 0.0, 1.0);
+		let vv = 1.0 - f64::clamp(uv.y(), 0.0, 1.0);
 
 		let mut i = (uu * self.width as f64) as u32;
 		let mut j = (vv * self.height as f64) as u32;
