@@ -135,40 +135,10 @@ fn random_scene() -> HittableList
 	let m2: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.4, 0.2, 0.1)))));
 	objects.push(Arc::new(Sphere::new(Vec3d::new(-4.0, 1.0, 0.0), 1.0, m2.clone())));
 
-	let m3: Arc::<dyn Material> = Arc::new(Metal::new(Vec3d::new(0.7, 0.6, 0.5), 0.0));
+	let m3: Arc::<dyn Material> = Arc::new(Metal::new(Vec3d::new(0.7, 0.6, 0.5), 0.8));
 	objects.push(Arc::new(Sphere::new(Vec3d::new(4.0, 1.0, 0.0), 1.0, m3.clone())));
 
-	let ma: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(SolidColor::new(Vec3d::new(1.0, 0.0, 0.0)))));
-	/*objects.push(Arc::new(Triangle::new(
-		[Vec3d::new(1.0, 1.0, 1.0), Vec3d::new(0.0, 0.0, 1.0), Vec3d::new(2.0, 0.0, 0.0)],
-		[Vec2d::new(0.0, 0.0), Vec2d::new(0.0, 1.0), Vec2d::new(1.0, 1.0)],
-		ma
-	)));*/
-
 	objects.push(Arc::new(Wavefront::new("cessna.obj", Vec3d::new(-3.0, 1.0, 3.0), Vec3d::newv(1.0 / 10.0))));
-
-	world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
-
-	world
-}
-
-fn two_spheres_scene() -> HittableList
-{
-	let mut world = HittableList::new();
-	let mut objects: Vec::<Arc::<dyn Hittable>> = Vec::new();
-
-	/*let mat: Arc::<dyn Material> = Arc::new(Lambertian::new(
-		Arc::new(CheckerTexture::new(
-			Arc::new(SolidColor::new(Vec3d::new(0.2, 0.3, 0.1))),
-			Arc::new(SolidColor::new(Vec3d::new(0.9, 0.9, 0.9)))
-		))
-	));*/
-
-	let mat_per: Arc::<dyn Material> = Arc::new(Metal::new(Vec3d::new(1.0, 0.2, 0.2), 0.5));
-	let mat_tex: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(ImageTexture::new("earthmap.jpg"))));
-
-	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0, -4.0, 0.0), 4.0, mat_per.clone())));
-	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0,  4.0, 0.0), 4.0, mat_tex.clone())));
 
 	world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
 
@@ -178,9 +148,9 @@ fn two_spheres_scene() -> HittableList
 fn main()
 {
 	let aspect_ratio: f64 = 16.0 / 9.0;
-	let width: u32 = 1920;
+	let width: u32 = 100;
 	let height: u32 = (width as f64 / aspect_ratio) as u32;
-	let samples = 1000;
+	let samples = 20000;
 	let max_depth: i32 = 50;
 
 	let mut imgbuf = image::ImageBuffer::new(width, height);
@@ -189,7 +159,7 @@ fn main()
 	let lookat = Vec3d::new(-2.0, 0.0, 3.0);
 	let vup = Vec3d::new(0.0, 1.0, 0.0);
 	let dist_to_focus = 10.0;
-	let aperture = 0.1; //25;
+	let aperture = 0.01; //25;
 	let camera = Camera::with_time(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
 	//let background = Vec3d::new(0.5, 0.5, 0.75);
