@@ -1,26 +1,55 @@
-mod math;
-mod ray;
-mod objects;
-mod hittable;
-mod camera;
-mod materials;
-mod aabb;
 mod bvh;
-mod textures;
+mod camera;
+mod hittable;
+mod math;
+mod materials;
+mod objects;
 mod perlin;
+mod ray;
+mod textures;
 
-use math::{Vec3d};
-use ray::Ray;
-use hittable::{Hittable, HittableList};
-use objects::{Sphere,MovingSphere,Cylinder,Cone,Triangle,Wavefront};
-use materials::{Material,Lambertian,Metal,Dielectric,DiffuseLight};
-use camera::Camera;
+use crate::bvh::BvhNode;
+use crate::camera::Camera;
+use crate::hittable::
+{
+	Hittable,
+	HittableList
+};
+use crate::materials::
+{
+	Material,
+	lambertian::Lambertian,
+	metal::Metal,
+	dielectric::Dielectric,
+	diffuse_light::DiffuseLight,
+};
+use crate::math::vec::Vec3d;
+use crate::objects::
+{
+	sphere::Sphere,
+	moving_sphere::MovingSphere,
+	wavefront::Wavefront
+};
+use crate::textures::
+{
+	checker_texture::CheckerTexture,
+	image_texture::ImageTexture,
+	noise_texture::NoiseTexture,
+	solid_color::SolidColor,
+};
+use crate::ray::Ray;
+
+use indicatif::
+{
+	ProgressBar,
+	ProgressStyle,
+};
+
 use rand::Rng;
-use std::sync::Arc;
+
 use rayon::prelude::*;
-use indicatif::{ProgressBar,ProgressStyle};
-use textures::{SolidColor,CheckerTexture,NoiseTexture,ImageTexture};
-use bvh::BvhNode;
+
+use std::sync::Arc;
 
 fn ray_color(r: &Ray, background: Vec3d, world: &dyn Hittable, depth: i32) -> Vec3d
 {
@@ -118,7 +147,7 @@ fn random_scene() -> HittableList
 
 	objects.push(Arc::new(Wavefront::new("cessna.obj", Vec3d::new(-3.0, 1.0, 3.0), Vec3d::newv(1.0 / 10.0))));
 
-	world.add(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
+	world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
 
 	world
 }
@@ -141,7 +170,7 @@ fn two_spheres_scene() -> HittableList
 	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0, -4.0, 0.0), 4.0, mat_per.clone())));
 	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0,  4.0, 0.0), 4.0, mat_tex.clone())));
 
-	world.add(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
+	world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
 
 	world
 }

@@ -1,17 +1,21 @@
 #![allow(dead_code)]
 
 use std::default::Default;
-use std::ops::Add;
-use std::ops::AddAssign;
-use std::ops::Sub;
-use std::ops::SubAssign;
-use std::ops::Mul;
-use std::ops::MulAssign;
-use std::ops::Div;
-use std::ops::DivAssign;
-use std::ops::Rem;
-use std::ops::RemAssign;
-use std::ops::Neg;
+
+use std::ops::
+{
+	Add,
+	AddAssign,
+	Div,
+	DivAssign,
+	Neg,
+	Mul,
+	MulAssign,
+	Rem,
+	RemAssign,
+	Sub,
+	SubAssign,
+};
 use rand::Rng;
 
 #[derive(Debug, Copy, Clone)]
@@ -97,7 +101,7 @@ impl Vec3d
 	{
 		loop
 		{
-			let v = Vec3d::random(-1.0, 1.0);
+			let v = Self::random(-1.0, 1.0);
 			if Self::dot(v, v) >= 1.0
 			{
 				continue

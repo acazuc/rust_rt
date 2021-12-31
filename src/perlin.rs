@@ -1,4 +1,4 @@
-use crate::math::Vec3d;
+use crate::math::vec::Vec3d;
 
 use rand::Rng;
 
@@ -27,7 +27,7 @@ impl Perlin
 		Self{ranvec, perm_x, perm_y, perm_z}
 	}
 
-	pub fn generate_perm() -> Vec::<i32>
+	fn generate_perm() -> Vec::<i32>
 	{
 		let mut data = Vec::<i32>::with_capacity(256);
 		for i in 0..256
@@ -39,7 +39,7 @@ impl Perlin
 		data
 	}
 
-	pub fn permute(data: &mut Vec::<i32>)
+	fn permute(data: &mut Vec::<i32>)
 	{
 		let mut rng = rand::thread_rng();
 		for i in data.len()-1..0

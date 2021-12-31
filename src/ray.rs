@@ -1,4 +1,4 @@
-use crate::math::Vec3d;
+use crate::math::vec::Vec3d;
 
 pub struct Ray
 {

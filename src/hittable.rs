@@ -1,10 +1,14 @@
-use crate::math::{Vec3d,Vec2d};
-
-use crate::ray::Ray;
-
+use crate::math::
+{
+	aabb::Aabb,
+	vec::
+	{
+		Vec2d,
+		Vec3d,
+	}
+};
 use crate::materials::Material;
-
-use crate::aabb::Aabb;
+use crate::ray::Ray;
 
 use std::sync::Arc;
 
@@ -54,14 +58,9 @@ impl HittableList
 		HittableList{objects: Vec::default()}
 	}
 
-	pub fn add(&mut self, object: Arc::<dyn Hittable>)
+	pub fn push(&mut self, object: Arc::<dyn Hittable>)
 	{
 		self.objects.push(object)
-	}
-
-	pub fn clear(&mut self)
-	{
-		self.objects.clear()
 	}
 }
 

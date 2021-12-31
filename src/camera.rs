@@ -1,5 +1,4 @@
-use crate::math::Vec3d;
-
+use crate::math::vec::Vec3d;
 use crate::ray::Ray;
 
 use rand::Rng;
@@ -48,7 +47,7 @@ impl Camera
 	{
 		let rd = Vec3d::random_in_unit_disk() * self.lens_radius;
 		let offset = self.u * rd.x() + self.v * rd.y();
-		if self.time0 != self.time1
+		if f64::abs(self.time0 - self.time1) > f64::EPSILON
 		{
 			let mut rng = rand::thread_rng();
 			return Ray::with_time(self.origin + offset, self.lower_left_corner + self.horizontal * u + self.vertical * v - self.origin - offset, rng.gen_range(self.time0..self.time1));

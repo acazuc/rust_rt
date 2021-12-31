@@ -1,7 +1,5 @@
 use crate::hittable::{Hittable,HitRecord};
-
-use crate::aabb::Aabb;
-
+use crate::math::aabb::Aabb;
 use crate::ray::Ray;
 
 use rand::Rng;
@@ -97,17 +95,17 @@ impl BvhNode
 
 	fn box_x_compare(a: &Arc::<dyn Hittable>, b: &Arc::<dyn Hittable>) -> Ordering
 	{
-		return Self::box_compare(a, b, 0);
+		Self::box_compare(a, b, 0)
 	}
 
 	fn box_y_compare(a: &Arc::<dyn Hittable>, b: &Arc::<dyn Hittable>) -> Ordering
 	{
-		return Self::box_compare(a, b, 1);
+		Self::box_compare(a, b, 1)
 	}
 
 	fn box_z_compare(a: &Arc::<dyn Hittable>, b: &Arc::<dyn Hittable>) -> Ordering
 	{
-		return Self::box_compare(a, b, 2);
+		Self::box_compare(a, b, 2)
 	}
 }
 

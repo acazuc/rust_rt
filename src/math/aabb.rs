@@ -1,6 +1,6 @@
-use crate::math::Vec3d;
-
 use crate::ray::Ray;
+
+use super::vec::Vec3d;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Aabb
