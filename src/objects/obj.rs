@@ -13,13 +13,13 @@ use crate::math::
 		Vec3d,
 	}
 };
-use crate::ray::Ray;
-use crate::textures::solid_color::SolidColor;
 use crate::materials::
 {
 	lambertian::Lambertian,
 	Material,
 };
+use crate::ray::Ray;
+use crate::textures::solid_color::SolidColor;
 
 use std::sync::Arc;
 
@@ -27,16 +27,17 @@ use super::triangle::Triangle;
 
 use wavefront_obj::obj;
 
-pub struct Wavefront
+pub struct Obj
 {
 	bvh: BvhNode,
 }
 
-impl Wavefront
+impl Obj
 {
 	pub fn new(filename: &str, origin: Vec3d, scale: Vec3d) -> Self
 	{
-		let mat: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(1.0, 0.8, 0.8)))));
+		let mat: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(1.0, 1.0, 1.0)))));
+		//let mat: Arc::<dyn Material> = Arc::new(Dielectric::new(1.5));
 		let content = std::fs::read_to_string(filename).expect("can't read file");
 		let res = obj::parse(content);
 		if let Result::Ok(wf) = &res
@@ -137,7 +138,7 @@ impl Wavefront
 	}
 }
 
-impl Hittable for Wavefront
+impl Hittable for Obj
 {
 	fn hit(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<HitRecord>
 	{

@@ -28,7 +28,8 @@ use crate::objects::
 {
 	sphere::Sphere,
 	moving_sphere::MovingSphere,
-	wavefront::Wavefront
+	obj::Obj,
+	stl::Stl,
 };
 use crate::textures::
 {
@@ -135,10 +136,14 @@ fn random_scene() -> HittableList
 	let m2: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.4, 0.2, 0.1)))));
 	objects.push(Arc::new(Sphere::new(Vec3d::new(-4.0, 1.0, 0.0), 1.0, m2.clone())));
 
-	let m3: Arc::<dyn Material> = Arc::new(Metal::new(Vec3d::new(0.7, 0.6, 0.5), 0.8));
+	let m3: Arc::<dyn Material> = Arc::new(Metal::new(Vec3d::new(0.7, 0.6, 0.5), 0.0));
 	objects.push(Arc::new(Sphere::new(Vec3d::new(4.0, 1.0, 0.0), 1.0, m3.clone())));
 
-	objects.push(Arc::new(Wavefront::new("cessna.obj", Vec3d::new(-3.0, 1.0, 3.0), Vec3d::newv(1.0 / 10.0))));
+	let m4: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(SolidColor::new(Vec3d::new(0.5, 0.5, 0.8) * 10.0))));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(10.0, 10.0, 10.0), 5.0, m4.clone())));
+
+	objects.push(Arc::new(Obj::new("cessna.obj", Vec3d::new(-3.0, 1.0, 3.0), Vec3d::newv(1.0 / 10.0))));
+	objects.push(Arc::new(Stl::new("frostmourne.stl", Vec3d::new(0.0, -1.0, 7.0), Vec3d::newv(1.0 / 15.0), m2)));
 
 	world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
 
@@ -148,22 +153,22 @@ fn random_scene() -> HittableList
 fn main()
 {
 	let aspect_ratio: f64 = 16.0 / 9.0;
-	let width: u32 = 100;
+	let width: u32 = 1920;
 	let height: u32 = (width as f64 / aspect_ratio) as u32;
-	let samples = 20000;
+	let samples = 25000;
 	let max_depth: i32 = 50;
 
 	let mut imgbuf = image::ImageBuffer::new(width, height);
 
-	let lookfrom = Vec3d::new(-13.0, 5.0, 5.0);
+	let lookfrom = Vec3d::new(-5.0, 20.0, 5.0);
 	let lookat = Vec3d::new(-2.0, 0.0, 3.0);
 	let vup = Vec3d::new(0.0, 1.0, 0.0);
 	let dist_to_focus = 10.0;
-	let aperture = 0.01; //25;
+	let aperture = 0.01;
 	let camera = Camera::with_time(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
 	//let background = Vec3d::new(0.5, 0.5, 0.75);
-	let background = Vec3d::new(0.0, 0.0, 0.0);
+	let background = Vec3d::new(0.02, 0.02, 0.05);
 
 	let pb = ProgressBar::new(1);
 	pb.set_style(ProgressStyle::default_bar().template("[{elapsed_precise}, ETA: {eta}] {wide_bar:} {msg}"));
@@ -198,6 +203,7 @@ fn main()
 		pb.inc(1);
 	});
 
+	println!("");
 	pb.set_message("converting");
 	pb.set_length((width * height) as u64);
 	pb.reset();
@@ -212,5 +218,6 @@ fn main()
 		pb.inc(1);
 	});
 
+	println!("");
 	imgbuf.save("output.png").unwrap();
 }

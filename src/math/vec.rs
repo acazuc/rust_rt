@@ -159,8 +159,15 @@ impl Vec3d
 	}
 }
 
-impl<T> Vec4<T>
-where T: Copy
+impl From<[f32; 3]> for Vec3d
+{
+	fn from(data: [f32; 3]) -> Self
+	{
+		Self::new(data[0] as f64, data[1] as f64, data[2] as f64)
+	}
+}
+
+impl<T: Copy> Vec4<T>
 {
 	pub fn new(x: T, y: T, z: T, w: T) -> Self
 	{
@@ -193,8 +200,7 @@ where T: Copy
 	}
 }
 
-impl<T> Vec3<T>
-where T: Copy
+impl<T: Copy> Vec3<T>
 {
 	pub fn new(x: T, y: T, z: T) -> Self
 	{
@@ -233,8 +239,7 @@ where T: Copy + Mul<Output = T> + Sub<Output = T>
 	}
 }
 
-impl<T> Vec2<T>
-where T: Copy
+impl<T: Copy> Vec2<T>
 {
 	pub fn new(x: T, y: T) -> Self
 	{
@@ -257,8 +262,7 @@ where T: Copy
 	}
 }
 
-impl<T> Vec1<T>
-where T: Copy
+impl<T: Copy> Vec1<T>
 {
 	pub fn new(x: T) -> Self
 	{
@@ -273,6 +277,70 @@ where T: Copy
 	pub fn x(self) -> T
 	{
 		self.v[0]
+	}
+}
+
+impl<T: Copy> From<(T, T, T, T)> for Vec4<T>
+{
+	fn from(data: (T, T, T, T)) -> Self
+	{
+		Vec4::new(data.0, data.1, data.2, data.3)
+	}
+}
+
+impl<T: Copy> From<[T; 4]> for Vec4<T>
+{
+	fn from(data: [T; 4]) -> Self
+	{
+		Vec4::new(data[0], data[1], data[2], data[3])
+	}
+}
+
+impl<T: Copy> From<(T, T, T)> for Vec3<T>
+{
+	fn from(data: (T, T, T)) -> Self
+	{
+		Vec3::new(data.0, data.1, data.2)
+	}
+}
+
+impl<T: Copy> From<[T; 3]> for Vec3<T>
+{
+	fn from(data: [T; 3]) -> Self
+	{
+		Vec3::new(data[0], data[1], data[2])
+	}
+}
+
+impl<T: Copy> From<(T, T)> for Vec2<T>
+{
+	fn from(data: (T, T)) -> Self
+	{
+		Vec2::new(data.0, data.1)
+	}
+}
+
+impl<T: Copy> From<[T; 2]> for Vec2<T>
+{
+	fn from(data: [T; 2]) -> Self
+	{
+		Vec2::new(data[0], data[1])
+	}
+}
+
+impl<T: Copy> From<T> for Vec1<T>
+{
+	fn from(data: T) -> Self
+	{
+		Vec1::new(data)
+	}
+}
+
+impl<T: Copy> From<[T; 1]> for Vec1<T>
+{
+	fn from(data: [T; 1]) -> Self
+	{
+		Vec1::new(data[0])
 	}
 }
 
