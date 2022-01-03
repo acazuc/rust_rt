@@ -86,9 +86,14 @@ pub(crate) type Vec2d = Vec2<f64>;
 
 impl Vec3d
 {
+	pub fn length(lhs: Self) -> f64
+	{
+		f64::sqrt(Self::dot(lhs, lhs))
+	}
+
 	pub fn normalize(lhs: Self) -> Self
 	{
-		lhs / f64::sqrt(Self::dot(lhs, lhs))
+		lhs / Self::length(lhs)
 	}
 
 	pub fn random(min: f64, max: f64) -> Self
@@ -156,6 +161,16 @@ impl Vec3d
 		let r_out_perp = (lhs + n * cos_theta) * etai_over_etat;
 		let r_out_parallel = n * -f64::sqrt(f64::abs(1.0 - Self::dot(r_out_perp, r_out_perp)));
 		r_out_perp + r_out_parallel
+	}
+
+	pub fn zero() -> Self
+	{
+		Self::newv(0.0)
+	}
+
+	pub fn one() -> Self
+	{
+		Self::newv(1.0)
 	}
 }
 

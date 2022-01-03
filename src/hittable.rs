@@ -38,6 +38,19 @@ impl HitRecord
 		}
 		Self{p, normal, t, uv, front_face, material}
 	}
+
+	pub fn set_face_normal(&mut self, r: &Ray, normal: Vec3d)
+	{
+		let front_face = Vec3d::dot(r.dir(), normal) < 0.0;
+		if front_face
+		{
+			self.normal = normal;
+		}
+		else
+		{
+			self.normal = -normal;
+		}
+	}
 }
 
 pub trait Hittable : Sync + Send

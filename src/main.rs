@@ -18,18 +18,28 @@ use crate::hittable::
 use crate::materials::
 {
 	Material,
-	lambertian::Lambertian,
-	metal::Metal,
 	dielectric::Dielectric,
 	diffuse_light::DiffuseLight,
+	lambertian::Lambertian,
+	metal::Metal,
 };
 use crate::math::vec::Vec3d;
 use crate::objects::
 {
-	sphere::Sphere,
+	constant_medium::ConstantMedium,
+	cube::Cube,
 	moving_sphere::MovingSphere,
 	obj::Obj,
+	rect::
+	{
+		XYRect,
+		XZRect,
+		YZRect,
+	},
+	rotate::RotateY,
+	sphere::Sphere,
 	stl::Stl,
+	translate::Translate,
 };
 use crate::textures::
 {
@@ -73,8 +83,15 @@ fn ray_color(r: &Ray, background: Vec3d, world: &dyn Hittable, depth: i32) -> Ve
 	background
 }
 
-fn random_scene() -> HittableList
+fn random_scene(aspect_ratio: f64) -> (HittableList, Camera)
 {
+	let lookfrom = Vec3d::new(-5.0, 20.0, 5.0);
+	let lookat = Vec3d::new(-2.0, 0.0, 3.0);
+	let vup = Vec3d::new(0.0, 1.0, 0.0);
+	let dist_to_focus = 10.0;
+	let aperture = 0.01;
+	let camera = Camera::with_time(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
 	let mut rng = rand::thread_rng();
 	let mut world = HittableList::new();
 	let mut objects: Vec::<Arc::<dyn Hittable>> = Vec::new();
@@ -147,34 +164,170 @@ fn random_scene() -> HittableList
 
 	world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
 
-	world
+	(world, camera)
 }
 
-fn main()
+fn simple_light_scene(aspect_ratio: f64) -> (HittableList, Camera)
 {
-	let aspect_ratio: f64 = 16.0 / 9.0;
-	let width: u32 = 1920;
-	let height: u32 = (width as f64 / aspect_ratio) as u32;
-	let samples = 25000;
-	let max_depth: i32 = 50;
-
-	let mut imgbuf = image::ImageBuffer::new(width, height);
-
-	let lookfrom = Vec3d::new(-5.0, 20.0, 5.0);
-	let lookat = Vec3d::new(-2.0, 0.0, 3.0);
+	let lookfrom = Vec3d::new(26.0, 3.0, 6.0);
+	let lookat = Vec3d::new(0.0, 2.0, 0.0);
 	let vup = Vec3d::new(0.0, 1.0, 0.0);
 	let dist_to_focus = 10.0;
 	let aperture = 0.01;
 	let camera = Camera::with_time(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
+	let mut world = HittableList::new();
+	let mut objects: Vec::<Arc::<dyn Hittable>> = Vec::new();
+
+	let pertext: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(NoiseTexture::new(Vec3d::one(), 4.0))));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0, -1000.0, 0.0), 1000.0, pertext.clone())));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0,     2.0, 0.0),    2.0, pertext.clone())));
+
+	let difflight: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(SolidColor::new(Vec3d::newv(4.0)))));
+	objects.push(Arc::new(XYRect::new(3.0, 5.0, 1.0, 3.0, -2.0, difflight.clone())));
+
+	world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
+
+	(world, camera)
+}
+
+fn cornell_box(aspect_ratio: f64) -> (HittableList, Camera)
+{
+	let lookfrom = Vec3d::new(278.0, 278.0, -800.0);
+	let lookat = Vec3d::new(278.0, 278.0, 0.0);
+	let vup = Vec3d::new(0.0, 1.0, 0.0);
+	let dist_to_focus = 10.0;
+	let aperture = 0.01;
+	let camera = Camera::with_time(lookfrom, lookat, vup, 40.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+	let mut world = HittableList::new();
+	let mut objects: Vec::<Arc::<dyn Hittable>> = Vec::new();
+
+	let red   = Arc::new(  Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.64, 0.05, 0.05)))));
+	let white = Arc::new(  Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.73, 0.73, 0.73)))));
+	let green = Arc::new(  Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.12, 0.45, 0.15)))));
+	let light = Arc::new(DiffuseLight::new(Arc::new(SolidColor::new(Vec3d::new(7.0 , 7.0 , 7.0)))));
+
+	objects.push(Arc::new(YZRect::new(  0.0, 555.0,   0.0, 555.0, 555.0, green.clone())));
+	objects.push(Arc::new(YZRect::new(  0.0, 555.0,   0.0, 555.0,   0.0, red.clone())));
+	objects.push(Arc::new(XZRect::new(113.0, 443.0, 127.0, 432.0, 554.0, light.clone())));
+	objects.push(Arc::new(XZRect::new(  0.0, 555.0,   0.0, 555.0,   0.0, white.clone())));
+	objects.push(Arc::new(XZRect::new(  0.0, 555.0,   0.0, 555.0, 555.0, white.clone())));
+	objects.push(Arc::new(XYRect::new(  0.0, 555.0,   0.0, 555.0, 555.0, white.clone())));
+
+	let mut box1: Arc::<dyn Hittable> = Arc::new(Cube::new(Vec3d::new(0.0, 0.0, 0.0), Vec3d::new(165.0, 330.0, 165.0), white.clone()));
+	box1 = Arc::new(RotateY::new(box1.clone(), 15.0));
+	box1 = Arc::new(Translate::new(box1.clone(), Vec3d::new(265.0, 0.0, 295.0)));
+
+	objects.push(Arc::new(ConstantMedium::new(box1.clone(), 0.01, Arc::new(SolidColor::new(Vec3d::zero())))));
+
+	let mut box2: Arc::<dyn Hittable> = Arc::new(Cube::new(Vec3d::new(0.0, 0.0, 0.0), Vec3d::new(165.0, 165.0, 165.0), white.clone()));
+	box2 = Arc::new(RotateY::new(box2.clone(), -18.0));
+	box2 = Arc::new(Translate::new(box2.clone(), Vec3d::new(130.0, 0.0, 65.0)));
+	objects.push(Arc::new(ConstantMedium::new(box2.clone(), 0.01, Arc::new(SolidColor::new(Vec3d::one())))));
+
+	world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
+
+	(world, camera)
+}
+
+fn chapter2(aspect_ratio: f64) -> (HittableList, Camera)
+{
+	let lookfrom = Vec3d::new(478.0, 278.0, -600.0);
+	let lookat = Vec3d::new(278.0, 278.0, 0.0);
+	let vup = Vec3d::new(0.0, 1.0, 0.0);
+	let dist_to_focus = 10.0;
+	let aperture = 0.01;
+	let camera = Camera::with_time(lookfrom, lookat, vup, 40.0, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+	let mut rng = rand::thread_rng();
+	let mut world = HittableList::new();
+	let mut objects: Vec::<Arc::<dyn Hittable>> = Vec::new();
+
+	let ground = Arc::new(Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.48, 0.83, 0.53)))));
+	let mut boxes1: Vec::<Arc::<dyn Hittable>> = Vec::new();
+	let boxes_per_side = 20;
+	for i in 0..boxes_per_side
+	{
+		for j in 0..boxes_per_side
+		{
+			let w = 100.0;
+			let x0 = -1000.0 + i as f64 * w;
+			let z0 = -1000.0 + j as f64 * w;
+			let y0 = 0.0;
+			let x1 = x0 + w;
+			let y1 = rng.gen_range(1.0..101.0);
+			let z1 = z0 + w;
+
+			boxes1.push(Arc::new(Cube::new(Vec3d::new(x0, y0, z0), Vec3d::new(x1, y1, z1), ground.clone())));
+		}
+	}
+	objects.push(Arc::new(BvhNode::new(boxes1, 0.0, 1.0)));
+
+	let light: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(SolidColor::new(Vec3d::newv(7.0)))));
+	objects.push(Arc::new(XZRect::new(123.0, 423.0, 147.0, 412.0, 554.0, light.clone())));
+
+	let center1 = Vec3d::new(400.0, 400.0, 200.0);
+	let center2 = center1 + Vec3d::new(30.0, 0.0, 0.0);
+	let moving_sphere_material: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.7, 0.3, 0.1)))));
+	objects.push(Arc::new(MovingSphere::new(center1, center2, 0.0, 1.0, 50.0, moving_sphere_material.clone())));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(260.0, 140.0, 45.0), 50.0, Arc::new(Dielectric::new(1.5)))));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(0.0, 150.0, 145.0), 50.0, Arc::new(Metal::new(Vec3d::new(0.8, 0.8, 0.9), 1.0)))));
+
+	let b1: Arc::<dyn Hittable> = Arc::new(Sphere::new(Vec3d::new(360.0, 150.0, 145.0), 70.0, Arc::new(Dielectric::new(1.5))));
+	objects.push(b1.clone());
+	objects.push(Arc::new(ConstantMedium::new(b1.clone(), 0.2, Arc::new(SolidColor::new(Vec3d::new(0.2, 0.4, 0.9))))));
+	let b2: Arc::<dyn Hittable> = Arc::new(Sphere::new(Vec3d::new(0.0, 0.0, 0.0), 5000.0, Arc::new(Dielectric::new(1.5))));
+	objects.push(Arc::new(ConstantMedium::new(b2.clone(), 0.0001, Arc::new(SolidColor::new(Vec3d::new(1.0, 1.0, 1.0))))));
+
+	objects.push(Arc::new(Sphere::new(Vec3d::new(400.0, 200.0, 400.0), 100.0, Arc::new(Lambertian::new(Arc::new(ImageTexture::new("earthmap.jpg")))))));
+	objects.push(Arc::new(Sphere::new(Vec3d::new(220.0, 280.0, 300.0), 80.0, Arc::new(Lambertian::new(Arc::new(NoiseTexture::new(Vec3d::new(1.0, 1.0, 1.0), 0.1)))))));
+
+	let mut boxes2: Vec::<Arc::<dyn Hittable>> = Vec::new();
+	let white: Arc::<dyn Material> = Arc::new(Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.73, 0.73, 0.73)))));
+	for _ in 0..1000
+	{
+		boxes2.push(Arc::new(Sphere::new(Vec3d::random(0.0, 165.0), 10.0, white.clone())));
+	}
+	objects.push(Arc::new
+	(
+		Translate::new
+		(
+			Arc::new(RotateY::new
+			(
+				Arc::new(BvhNode::new(boxes2, 0.0, 1.0)),
+				15.0
+			)),
+			Vec3d::new(-100.0, 270.0, 395.0)
+		)
+	));
+
+	world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
+
+	(world, camera)
+}
+
+fn main()
+{
+	let aspect_ratio: f64 = 9.0 / 9.0;
+	let width: u32 = 1080;
+	let height: u32 = (width as f64 / aspect_ratio) as u32;
+	let samples = 1000;
+	let max_depth: i32 = 50;
+
+	let mut imgbuf = image::ImageBuffer::new(width, height);
+
 	//let background = Vec3d::new(0.5, 0.5, 0.75);
-	let background = Vec3d::new(0.02, 0.02, 0.05);
+	//let background = Vec3d::new(0.02, 0.02, 0.05);
+	let background = Vec3d::zero();
 
 	let pb = ProgressBar::new(1);
 	pb.set_style(ProgressStyle::default_bar().template("[{elapsed_precise}, ETA: {eta}] {wide_bar:} {msg}"));
 
-	let world = random_scene();
-	//let world = two_spheres_scene();
+	//let (world, camera) = random_scene(aspect_ratio);
+	//let (world, camera) = simple_light_scene(aspect_ratio);
+	//let (world, camera) = cornell_box(aspect_ratio);
+	let (world, camera) = chapter2(aspect_ratio);
 
 	let mut pixels: Vec<Vec3d> = vec![Vec3d::newv(0.0); (width * height) as usize];
 

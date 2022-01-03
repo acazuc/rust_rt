@@ -1,7 +1,12 @@
 pub mod cone;
+pub mod constant_medium;
+pub mod cube;
 pub mod cylinder;
 pub mod moving_sphere;
 pub mod obj;
+pub mod rect;
+pub mod rotate;
 pub mod sphere;
 pub mod stl;
+pub mod translate;
 pub mod triangle;

@@ -73,7 +73,7 @@ impl Hittable for Cone
 		Some(HitRecord::new(r, p, t, self.get_uv(&normal), normal, self.material.clone()))
 	}
 
-	fn bounding_box(&self, _time: f64, _time1: f64) -> Option<Aabb>
+	fn bounding_box(&self, _time0: f64, _time1: f64) -> Option<Aabb>
 	{
 		Some(Aabb::new(self.center - Vec3d::newv(self.radius), self.center + Vec3d::newv(self.radius)))
 	}
