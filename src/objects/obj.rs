@@ -15,11 +15,16 @@ use crate::math::
 };
 use crate::materials::
 {
-	lambertian::Lambertian,
 	Material,
+	lambertian::Lambertian,
 };
 use crate::ray::Ray;
-use crate::textures::solid_color::SolidColor;
+use crate::scene::Scene;
+use crate::textures::
+{
+	Texture,
+	solid_color::SolidColor,
+};
 
 use std::sync::Arc;
 
@@ -148,5 +153,10 @@ impl Hittable for Obj
 	fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb>
 	{
 		self.bvh.bounding_box(time0, time1)
+	}
+
+	fn bvh_depth(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<(f64, u32)>
+	{
+		self.bvh.bvh_depth(r, tmin, tmax)
 	}
 }

@@ -61,7 +61,7 @@ impl Perlin
 		let j = f64::floor(p.y()) as i32;
 		let k = f64::floor(p.z()) as i32;
 
-		let mut c = [[[Vec3d::newv(0.0); 2]; 2]; 2];
+		let mut c = [[[Vec3d::zero(); 2]; 2]; 2];
 
 		for di in 0..2
 		{

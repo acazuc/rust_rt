@@ -11,6 +11,7 @@ use crate::math::
 };
 use crate::materials::Material;
 use crate::ray::Ray;
+use crate::scene::Scene;
 
 use std::sync::Arc;
 
@@ -58,5 +59,10 @@ impl Hittable for Cube
 	fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb>
 	{
 		self.bvh.bounding_box(time0, time1)
+	}
+
+	fn bvh_depth(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<(f64, u32)>
+	{
+		self.bvh.bvh_depth(r, tmin, tmax)
 	}
 }

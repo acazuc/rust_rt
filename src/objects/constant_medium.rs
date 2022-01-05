@@ -18,6 +18,7 @@ use crate::math::
 	}
 };
 use crate::ray::Ray;
+use crate::scene::Scene;
 use crate::textures::Texture;
 
 use rand::Rng;
@@ -80,7 +81,7 @@ impl Hittable for ConstantMedium
 
 				let t = rec1.t + hit_distance / ray_length;
 				let p = r.at(t);
-				return Some(HitRecord::new(r, p, t, Vec2d::newv(0.0), Vec3d::new(1.0, 0.0, 0.0), self.phase_function.clone()));
+				return Some(HitRecord::new(r, p, t, Vec2d::zero(), Vec3d::new(1.0, 0.0, 0.0), self.phase_function.clone()));
 			}
 		}
 

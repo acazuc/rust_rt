@@ -15,6 +15,7 @@ use crate::math::
 };
 use crate::materials::Material;
 use crate::ray::Ray;
+use crate::scene::Scene;
 
 use std::sync::Arc;
 
@@ -23,6 +24,7 @@ use super::triangle::Triangle;
 pub struct Stl
 {
 	bvh: BvhNode,
+	material: Arc::<dyn Material>,
 }
 
 impl Stl
@@ -47,7 +49,7 @@ impl Stl
 				}
 
 				let bvh = BvhNode::new(triangles, 0.0, 0.0);
-				return Self{bvh};
+				return Self{bvh, material: mat.clone()};
 			}
 
 			panic!("can't parse file {}", filename);
@@ -67,5 +69,10 @@ impl Hittable for Stl
 	fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb>
 	{
 		self.bvh.bounding_box(time0, time1)
+	}
+
+	fn bvh_depth(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<(f64, u32)>
+	{
+		self.bvh.bvh_depth(r, tmin, tmax)
 	}
 }

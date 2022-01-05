@@ -3,6 +3,7 @@ use crate::math::vec::
 	Vec2d,
 	Vec3d,
 };
+use crate::scene::Scene;
 
 use super::Texture;
 

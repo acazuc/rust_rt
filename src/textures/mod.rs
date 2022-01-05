@@ -8,6 +8,9 @@ use crate::math::vec::
 	Vec2d,
 	Vec3d,
 };
+use crate::scene::Scene;
+
+use std::sync::Arc;
 
 pub trait Texture: Sync + Send
 {

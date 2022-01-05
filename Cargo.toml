@@ -7,10 +7,11 @@ authors = ["acazuc"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-image = { version = "0.23", default-features = false, features = ["png", "jpeg"] }
+image = "0.23"
 rand = "0.8.4"
 rayon = "1.5"
 indicatif = "0.16"
 wavefront_obj = "10.0"
 nom_stl = "0.2"
-xmlparser = "0.13"
+roxmltree = "0.14"
+show-image = "0.6"

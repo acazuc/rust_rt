@@ -66,3 +66,11 @@ impl Material for Dielectric
 		Some((Vec3d::newv(1.0), Ray::with_time(rec.p, direction, r.time())))
 	}
 }
+
+impl<'a, 'input> From<&roxmltree::Node<'a, 'input>> for Dielectric
+{
+	fn from(node: &roxmltree::Node) -> Self
+	{
+		Self::new(1.5)
+	}
+}

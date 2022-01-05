@@ -1,6 +1,7 @@
 use crate::hittable::{Hittable,HitRecord};
 use crate::math::aabb::Aabb;
 use crate::ray::Ray;
+use crate::scene::Scene;
 
 use rand::Rng;
 
@@ -19,15 +20,6 @@ impl BvhNode
 {
 	pub fn new(mut objects: Vec<Arc::<dyn Hittable>>, time0: f64, time1: f64) -> Self
 	{
-		let mut rng = rand::thread_rng();
-		let axis = f64::floor(rng.gen_range(0.0..3.0)) as u32;
-		let comparator = match axis
-		{
-			0 => Self::box_x_compare,
-			1 => Self::box_y_compare,
-			_ => Self::box_z_compare,
-		};
-		objects.sort_unstable_by(|a, b| comparator(&a, &b));
 		let (left, right) = match objects.len()
 		{
 			0 => (None, None),
@@ -35,6 +27,17 @@ impl BvhNode
 			2 => (Some(objects.remove(0)), Some(objects.remove(0))),
 			_ => 
 			{
+				let mut rng = rand::thread_rng();
+				let axis = f64::floor(rng.gen_range(0.0..3.0)) as u32;
+				let comparator = match axis
+				{
+					0 => Self::box_x_compare,
+					1 => Self::box_y_compare,
+					_ => Self::box_z_compare,
+				};
+
+				objects.sort_unstable_by(|a, b| comparator(&a, &b));
+
 				let mid = objects.len() / 2;
 				let objects_left = objects.drain(0..mid).collect();
 				let tmp1: Arc::<dyn Hittable> = Arc::new(BvhNode::new(objects_left, time0, time1));
@@ -146,5 +149,57 @@ impl Hittable for BvhNode
 	fn bounding_box(&self, _time0: f64, _time1: f64) -> Option<Aabb>
 	{
 		Some(self.aabb)
+	}
+
+	fn bvh_depth(&self, ray: &Ray, tmin: f64, tmax: f64) -> Option<(f64, u32)>
+	{
+		if !self.aabb.hit(ray, tmin, tmax)
+		{
+			return None;
+		}
+
+		return match (&self.left, &self.right)
+		{
+			(None, None) => None,
+			(Some(l), None) =>
+			{
+				if let Some(ll) = l.bvh_depth(ray, tmin, tmax)
+				{
+					Some((ll.0, ll.1 + 1))
+				}
+				else
+				{
+					None
+				}
+			}
+			(None, Some(r)) =>
+			{
+				if let Some(rr) = r.bvh_depth(ray, tmin, tmax)
+				{
+					Some((rr.0, rr.1 + 1))
+				}
+				else
+				{
+					None
+				}
+			}
+			(Some(l), Some(r)) => match (l.bvh_depth(ray, tmin, tmax), r.bvh_depth(ray, tmin, tmax))
+			{
+				(None, None) => None,
+				(Some(ll), None) => Some((ll.0, ll.1 + 1)),
+				(None, Some(rr)) => Some((rr.0, rr.1 + 1)),
+				(Some(ll), Some(rr)) =>
+				{
+					if ll.0 < rr.0
+					{
+						Some((ll.0, ll.1 + 1))
+					}
+					else
+					{
+						Some((rr.0, rr.1 + 1))
+					}
+				},
+			}
+		}
 	}
 }

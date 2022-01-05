@@ -1,0 +1,42 @@
+<Scene>
+	<Camera>
+		<Position x="278" y="278" z="278"/>
+		<Direction x="278" y="278" z="0"/>
+		<Fov value="40.0"/>
+		<Size x="1000" y="1000"/>
+		<Aperture value="0.01"/>
+		<FocusDistance value="10"/>
+	</Camera>
+	<Textures>
+		<SolidColor name="red">
+			<Color x="0.64" y="0.05" z="0.05"/>
+		</SolidColor>
+		<SolidColor name="white">
+			<Color x="0.73" y="0.73" z="0.73"/>
+		</SolidColor>
+		<SolidColor name="green">
+			<Color x="0.12" y="0.45" z="0.15"/>
+		</SolidColor>
+		<SolidColor name="light">
+			<Color x="7.0" y="7.0" z="7.0"/>
+		</SolidColor>
+	</Textures>
+	<Materials>
+		<Lambertian name="red">
+			<Albedo name="red"/>
+		</Lambertian>
+		<Lambertian name="white">
+			<Albedo name="white"/>
+		</Lambertian>
+		<Lambertian name="green">
+			<Albedo name="green"/>
+		</Lambertian>
+		<DiffuseLight name="light">
+			<Emit name="light"/>
+		</DiffuseLight>
+	</Materials>
+	<Objects>
+		<YZRect>
+		</YZRect>
+	</Objects>
+</Scene>

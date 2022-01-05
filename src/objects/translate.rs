@@ -9,6 +9,7 @@ use crate::math::
 	vec::Vec3d,
 };
 use crate::ray::Ray;
+use crate::scene::Scene;
 
 use std::sync::Arc;
 
@@ -47,6 +48,17 @@ impl Hittable for Translate
 		{
 			return Some(Aabb::new(aabb.min() + self.offset,
 			                      aabb.max() + self.offset));
+		}
+
+		None
+	}
+
+	fn bvh_depth(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<(f64, u32)>
+	{
+		let moved_r = Ray::with_time(r.orig() - self.offset, r.dir(), r.time());
+		if let Some(rec) = self.obj.bvh_depth(&moved_r, tmin, tmax)
+		{
+			return Some(rec);
 		}
 
 		None

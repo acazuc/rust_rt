@@ -174,6 +174,19 @@ impl Vec3d
 	}
 }
 
+impl Vec2d
+{
+	pub fn zero() -> Self
+	{
+		Self::newv(0.0)
+	}
+
+	pub fn one() -> Self
+	{
+		Self::newv(1.0)
+	}
+}
+
 impl From<[f32; 3]> for Vec3d
 {
 	fn from(data: [f32; 3]) -> Self
@@ -299,7 +312,7 @@ impl<T: Copy> From<(T, T, T, T)> for Vec4<T>
 {
 	fn from(data: (T, T, T, T)) -> Self
 	{
-		Vec4::new(data.0, data.1, data.2, data.3)
+		Self::new(data.0, data.1, data.2, data.3)
 	}
 }
 
@@ -307,7 +320,7 @@ impl<T: Copy> From<[T; 4]> for Vec4<T>
 {
 	fn from(data: [T; 4]) -> Self
 	{
-		Vec4::new(data[0], data[1], data[2], data[3])
+		Self::new(data[0], data[1], data[2], data[3])
 	}
 }
 

@@ -9,6 +9,7 @@ use crate::math::
 };
 use crate::materials::Material;
 use crate::ray::Ray;
+use crate::scene::Scene;
 
 use std::sync::Arc;
 
@@ -57,11 +58,20 @@ pub trait Hittable : Sync + Send
 {
 	fn hit(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<HitRecord>;
 	fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb>;
+	fn bvh_depth(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<(f64, u32)>
+	{
+		if let Some(rec) = self.hit(r, tmin, tmax)
+		{
+			return Some((rec.t, 1));
+		}
+
+		None
+	}
 }
 
 pub struct HittableList
 {
-	objects: Vec<Arc::<dyn Hittable>>,
+	pub objects: Vec<Arc::<dyn Hittable>>,
 }
 
 impl HittableList
@@ -122,5 +132,22 @@ impl Hittable for HittableList
 		}
 
 		ret
+	}
+
+	fn bvh_depth(&self, r: &Ray, tmin: f64, tmax: f64) -> Option<(f64, u32)>
+	{
+		let mut closest_so_far = tmax;
+		let mut rec = None;
+
+		for o in &self.objects
+		{
+			if let Some(ret) = o.bvh_depth(r, tmin, closest_so_far)
+			{
+				closest_so_far = ret.0;
+				rec = Some(ret);
+			}
+		}
+
+		rec
 	}
 }

@@ -14,6 +14,7 @@ use crate::math::
 	}
 };
 use crate::ray::Ray;
+use crate::scene::Scene;
 
 use std::sync::Arc;
 

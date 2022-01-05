@@ -5,6 +5,7 @@ use crate::math::vec::
 	Vec3d,
 };
 use crate::ray::Ray;
+use crate::scene::Scene;
 use crate::textures::Texture;
 
 use std::sync::Arc;

@@ -1,20 +1,24 @@
 use crate::hittable::HitRecord;
 use crate::math::vec::Vec3d;
 use crate::ray::Ray;
+use crate::scene::Scene;
+use crate::textures::Texture;
+
+use std::sync::Arc;
 
 use super::Material;
 
 pub struct Metal
 {
-	albedo: Vec3d,
+	albedo: Arc::<dyn Texture>,
 	fuzz: f64,
 }
 
 impl Metal
 {
-	pub fn new(albedo: Vec3d, fuzz: f64) -> Self
+	pub fn new(albedo: Arc::<dyn Texture>, fuzz: f64) -> Self
 	{
-		Metal{albedo, fuzz}
+		Self{albedo, fuzz}
 	}
 }
 
@@ -26,7 +30,7 @@ impl Material for Metal
 		let scattered = Ray::with_time(rec.p, reflected + Vec3d::random_in_unit_sphere() * self.fuzz, r.time());
 		if Vec3d::dot(scattered.dir(), rec.normal) > 0.0
 		{
-			return Some((self.albedo, scattered));
+			return Some((self.albedo.value(rec.uv, rec.p), scattered));
 		}
 
 		None
