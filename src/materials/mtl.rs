@@ -112,7 +112,7 @@ impl Mtl
 
 impl Material for Mtl
 {
-	fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Vec3d, Ray)>
+	fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Vec3d, Ray, f64)>
 	{
 		let mut rng = rand::thread_rng();
 		let specular_pos = f64::powf(f64::max(0.0, Vec3d::dot(rec.normal, -r.dir())), self.specular_coefficient);
@@ -128,7 +128,7 @@ impl Material for Mtl
 					color_specular += (*tex).value(rec.uv, rec.p);
 				}
 
-				return Some((color_specular, scattered));
+				return Some((color_specular, scattered, 1.0));
 			}
 
 			return None;
@@ -147,10 +147,10 @@ impl Material for Mtl
 			color_diffuse += tex.value(rec.uv, rec.p);
 		}
 
-		Some((color_diffuse, Ray::with_time(rec.p, scatter_direction, r.time())))
+		Some((color_diffuse, Ray::with_time(rec.p, scatter_direction, r.time()), 1.0))
 	}
 
-	fn emitted(&self, uv: Vec2d, p: Vec3d) -> Vec3d
+	fn emitted(&self, _r: &Ray, _rec: &HitRecord, uv: Vec2d, p: Vec3d) -> Vec3d
 	{
 		match self.color_emissive
 		{

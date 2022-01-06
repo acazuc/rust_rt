@@ -22,8 +22,17 @@ pub trait Material: Send + Sync
 	{
 	}
 
-	fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Vec3d, Ray)>;
-	fn emitted(&self, uv: Vec2d, p: Vec3d) -> Vec3d
+	fn scatter(&self, _r: &Ray, _rec: &HitRecord) -> Option<(Vec3d, Ray, f64)>
+	{
+		None
+	}
+
+	fn scattering_pdf(&self, _r: &Ray, _rec: &HitRecord, _scattered: &Ray) -> f64
+	{
+		0.0
+	}
+
+	fn emitted(&self, _r: &Ray, _rec: &HitRecord, uv: Vec2d, p: Vec3d) -> Vec3d
 	{
 		Vec3d::zero()
 	}

@@ -16,6 +16,8 @@ use crate::math::
 use crate::ray::Ray;
 use crate::scene::Scene;
 
+use rand::Rng;
+
 use std::sync::Arc;
 
 pub struct XYRect
@@ -113,6 +115,26 @@ impl Hittable for XZRect
 	{
 		Some(Aabb::new(Vec3d::new(self.x0, self.k - std::f64::EPSILON, self.z0),
 		               Vec3d::new(self.x1, self.k + std::f64::EPSILON, self.z1)))
+	}
+
+	fn pdf_value(&self, o: Vec3d, v: Vec3d) -> f64
+	{
+		if let Some(rec) = self.hit(&Ray::new(o, v), 0.001, f64::INFINITY)
+		{
+			let area = (self.x1 - self.x0)  * (self.z1 - self.z0);
+			let distance_squared = rec.t * rec.t * Vec3d::dot(v, v);
+			let cosine = f64::abs(Vec3d::dot(v, rec.normal) / Vec3d::length(v));
+			return distance_squared / (cosine * area);
+		}
+
+		0.0
+	}
+
+	fn random(&self, o: Vec3d) -> Vec3d
+	{
+		let mut rng = rand::thread_rng();
+		let random_point = Vec3d::new(rng.gen_range(self.x0..self.x1), self.k, rng.gen_range(self.z0..self.z1));
+		random_point - o
 	}
 }
 

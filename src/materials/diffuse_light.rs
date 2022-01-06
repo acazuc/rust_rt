@@ -27,13 +27,20 @@ impl DiffuseLight
 
 impl Material for DiffuseLight
 {
-	fn scatter(&self, _r: &Ray, _rec: &HitRecord) -> Option<(Vec3d, Ray)>
+	fn scatter(&self, _r: &Ray, _rec: &HitRecord) -> Option<(Vec3d, Ray, f64)>
 	{
 		None
 	}
 
-	fn emitted(&self, uv: Vec2d, p: Vec3d) -> Vec3d
+	fn emitted(&self, _r: &Ray, rec: &HitRecord, uv: Vec2d, p: Vec3d) -> Vec3d
 	{
-		self.emit.value(uv, p)
+		if rec.front_face
+		{
+			self.emit.value(uv, p)
+		}
+		else
+		{
+			Vec3d::zero()
+		}
 	}
 }

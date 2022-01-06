@@ -25,6 +25,7 @@ use crate::objects::
 	constant_medium::ConstantMedium,
 	cube::Cube,
 	cylinder::Cylinder,
+	flip_face::FlipFace,
 	moving_sphere::MovingSphere,
 	obj::Obj,
 	rect::
@@ -64,14 +65,15 @@ pub struct Scene
 	camera: Camera,
 	textures: HashMap::<String, Arc::<dyn Texture>>,
 	materials: HashMap::<String, Arc::<dyn Material>>,
-	objects: HittableList,
+	objects: Arc::<HittableList>,
+	lights: Arc::<HittableList>,
 }
 
 impl Scene
 {
 	pub fn new(camera: Camera) -> Self
 	{
-		Self{camera, textures: HashMap::new(), materials: HashMap::new(), objects: HittableList::new()}
+		Self{camera, textures: HashMap::new(), materials: HashMap::new(), objects: Arc::new(HittableList::new()), lights: Arc::new(HittableList::new())}
 	}
 
 	pub fn camera(&self) -> &Camera
@@ -79,9 +81,14 @@ impl Scene
 		&self.camera
 	}
 	
-	pub fn objects(&self) -> &HittableList
+	pub fn objects(&self) -> Arc::<dyn Hittable>
 	{
-		&self.objects
+		self.objects.clone()
+	}
+
+	pub fn lights(&self) -> Arc::<dyn Hittable>
+	{
+		self.lights.clone()
 	}
 
 	pub fn texture(&self, name: String) -> Arc::<dyn Texture>
@@ -112,36 +119,34 @@ impl Scene
 		self.materials.insert(name, material);
 	}
 
-	pub fn insert_object(&mut self, object: Arc::<dyn Hittable>)
+	fn parse_xml_attr_f64(node: &roxmltree::Node, name: String) -> f64
 	{
-		self.objects.push(object);
+		return f64::from_str(&Self::parse_xml_attr_str(node, name)).expect("invalid float value");
 	}
 
-	fn parse_xml_attr_f64(node: &roxmltree::Node, name: &str) -> f64
+	fn parse_xml_attr_u32(node: &roxmltree::Node, name: String) -> u32
 	{
-		let attribute = node.attribute(name).expect("no Value attribute found");
-		return f64::from_str(attribute).expect("invalid float value");
+		return u32::from_str(&Self::parse_xml_attr_str(node, name)).expect("invalid float value");
 	}
 
-	fn parse_xml_attr_u32(node: &roxmltree::Node, name: &str) -> u32
+	pub fn parse_xml_attr_str(node: &roxmltree::Node, name: String) -> String
 	{
-		let attribute = node.attribute(name).expect("no Value attribute found");
-		return u32::from_str(attribute).expect("invalid float value");
+		node.attribute(name.as_str()).expect("no Value attribute found").to_string()
 	}
 
 	fn parse_xml_f64(node: &roxmltree::Node) -> f64
 	{
-		return Self::parse_xml_attr_f64(node, "value");
+		return Self::parse_xml_attr_f64(node, "value".to_string());
 	}
 
 	fn parse_xml_vec3d(node: &roxmltree::Node) -> Vec3d
 	{
-		Vec3d::new(Self::parse_xml_attr_f64(node, "x"), Self::parse_xml_attr_f64(node, "y"), Self::parse_xml_attr_f64(node, "z"))
+		Vec3d::new(Self::parse_xml_attr_f64(node, "x".to_string()), Self::parse_xml_attr_f64(node, "y".to_string()), Self::parse_xml_attr_f64(node, "z".to_string()))
 	}
 
 	fn parse_xml_vec2u(node: &roxmltree::Node) -> Vec2u
 	{
-		Vec2u::new(Self::parse_xml_attr_u32(node, "x"), Self::parse_xml_attr_u32(node, "y"))
+		Vec2u::new(Self::parse_xml_attr_u32(node, "x".to_string()), Self::parse_xml_attr_u32(node, "y".to_string()))
 	}
 
 	fn parse_xml_camera(node: &roxmltree::Node) -> Camera
@@ -219,9 +224,9 @@ impl Scene
 
 	fn parse_xml_object(&mut self, node: &roxmltree::Node)
 	{
-		self.insert_object(match node.tag_name().name()
+		/*self.insert_object(match node.tag_name().name()
 		{
-			/*"Group"          => Arc::new(BvhNode::from(&self, node)),
+			"Group"          => Arc::new(BvhNode::from(&self, node)),
 			"Cone"           => Arc::new(Cone::from(&self, node)),
 			"ConstantMedium" => Arc::new(ConstantMedium::from(&self, node)),
 			"Cube"           => Arc::new(Cube::from(&self, node)),
@@ -235,9 +240,9 @@ impl Scene
 			"Sphere"         => Arc::new(Sphere::from(&self, node)),
 			"Stl"            => Arc::new(Stl::from(&self, node)),
 			"Translate"      => Arc::new(Translate::from(&self, node)),
-			"Triangle"       => Arc::new(Triangle::from(&self, node)),*/
+			"Triangle"       => Arc::new(Triangle::from(&self, node)),
 			_                => panic!("unknown object: {}", node.tag_name().name()),
-		});
+		});*/
 	}
 
 	fn parse_xml_objects(&mut self, node: &roxmltree::Node)
@@ -376,7 +381,7 @@ impl Scene
 
 		world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
 
-		Self{camera, textures: HashMap::new(), materials: HashMap::new(), objects: world}
+		Self{camera, textures: HashMap::new(), materials: HashMap::new(), objects: Arc::new(world), lights: Arc::new(HittableList::new())}
 	}
 
 	pub fn simple_light_scene() -> Self
@@ -400,7 +405,7 @@ impl Scene
 
 		world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
 
-		Self{camera, textures: HashMap::new(), materials: HashMap::new(), objects: world}
+		Self{camera, textures: HashMap::new(), materials: HashMap::new(), objects: Arc::new(world), lights: Arc::new(HittableList::new())}
 	}
 
 	pub fn cornell_box() -> Self
@@ -412,39 +417,38 @@ impl Scene
 		let aperture = 0.01;
 		let camera = Camera::with_time(lookfrom, lookat, vup, 40.0, Vec2u::new(1000, 1000), aperture, dist_to_focus, 0.0, 1.0);
 
-		let mut scene = Self::new(camera);
+		let mut world = HittableList::new();
 		let mut objects: Vec::<Arc::<dyn Hittable>> = Vec::new();
+		let mut lights = HittableList::new();
 
-		scene.insert_texture("red".to_string(),   Arc::new(SolidColor::new(Vec3d::new(0.64, 0.05, 0.05))));
-		scene.insert_texture("white".to_string(), Arc::new(SolidColor::new(Vec3d::new(0.73, 0.73, 0.73))));
-		scene.insert_texture("green".to_string(), Arc::new(SolidColor::new(Vec3d::new(0.12, 0.45, 0.15))));
-		scene.insert_texture("light".to_string(), Arc::new(SolidColor::new(Vec3d::new(7.0 , 7.0 , 7.0 ))));
+		let red:   Arc::<dyn Material> = Arc::new(  Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.64, 0.05, 0.05)))));
+		let white: Arc::<dyn Material> = Arc::new(  Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.73, 0.73, 0.73)))));
+		let green: Arc::<dyn Material> = Arc::new(  Lambertian::new(Arc::new(SolidColor::new(Vec3d::new(0.12, 0.45, 0.15)))));
+		let light: Arc::<dyn Material> = Arc::new(DiffuseLight::new(Arc::new(SolidColor::new(Vec3d::new(15.0, 15.0 ,15.0 )))));
 
-		scene.insert_material("red".to_string()  , Arc::new(  Lambertian::new(scene.texture("red".to_string()))));
-		scene.insert_material("white".to_string(), Arc::new(  Lambertian::new(scene.texture("white".to_string()))));
-		scene.insert_material("green".to_string(), Arc::new(  Lambertian::new(scene.texture("green".to_string()))));
-		scene.insert_material("light".to_string(), Arc::new(DiffuseLight::new(scene.texture("light".to_string()))));
+		objects.push(Arc::new(YZRect::new(  0.0, 555.0,   0.0, 555.0, 555.0, green.clone())));
+		objects.push(Arc::new(YZRect::new(  0.0, 555.0,   0.0, 555.0,   0.0, red.clone())));
+		objects.push(Arc::new(FlipFace::new(Arc::new(XZRect::new(213.0, 343.0, 227.0, 332.0, 554.0, light.clone())))));
+		objects.push(Arc::new(XZRect::new(  0.0, 555.0,   0.0, 555.0,   0.0, white.clone())));
+		objects.push(Arc::new(XZRect::new(  0.0, 555.0,   0.0, 555.0, 555.0, white.clone())));
+		objects.push(Arc::new(XYRect::new(  0.0, 555.0,   0.0, 555.0, 555.0, white.clone())));
 
-		objects.push(Arc::new(YZRect::new(  0.0, 555.0,   0.0, 555.0, 555.0, scene.material("green".to_string()))));
-		objects.push(Arc::new(YZRect::new(  0.0, 555.0,   0.0, 555.0,   0.0, scene.material("red".to_string()))));
-		objects.push(Arc::new(XZRect::new(113.0, 443.0, 127.0, 432.0, 554.0, scene.material("light".to_string()))));
-		objects.push(Arc::new(XZRect::new(  0.0, 555.0,   0.0, 555.0,   0.0, scene.material("white".to_string()))));
-		objects.push(Arc::new(XZRect::new(  0.0, 555.0,   0.0, 555.0, 555.0, scene.material("white".to_string()))));
-		objects.push(Arc::new(XYRect::new(  0.0, 555.0,   0.0, 555.0, 555.0, scene.material("white".to_string()))));
-
-		let mut box1: Arc::<dyn Hittable> = Arc::new(Cube::new(Vec3d::new(0.0, 0.0, 0.0), Vec3d::new(165.0, 330.0, 165.0), scene.material("white".to_string())));
+		let mut box1: Arc::<dyn Hittable> = Arc::new(Cube::new(Vec3d::new(0.0, 0.0, 0.0), Vec3d::new(165.0, 330.0, 165.0), white.clone()));
 		box1 = Arc::new(RotateY::new(box1.clone(), 15.0));
 		box1 = Arc::new(Translate::new(box1.clone(), Vec3d::new(265.0, 0.0, 295.0)));
+		objects.push(box1);
+		//objects.push(Arc::new(ConstantMedium::new(box1.clone(), 0.01, Arc::new(SolidColor::new(Vec3d::zero())))));
 
-		objects.push(Arc::new(ConstantMedium::new(box1.clone(), 0.01, Arc::new(SolidColor::new(Vec3d::zero())))));
-
-		let mut box2: Arc::<dyn Hittable> = Arc::new(Cube::new(Vec3d::new(0.0, 0.0, 0.0), Vec3d::new(165.0, 165.0, 165.0), scene.material("white".to_string())));
+		let mut box2: Arc::<dyn Hittable> = Arc::new(Cube::new(Vec3d::new(0.0, 0.0, 0.0), Vec3d::new(165.0, 165.0, 165.0), white.clone()));
 		box2 = Arc::new(RotateY::new(box2.clone(), -18.0));
 		box2 = Arc::new(Translate::new(box2.clone(), Vec3d::new(130.0, 0.0, 65.0)));
-		objects.push(Arc::new(ConstantMedium::new(box2.clone(), 0.01, Arc::new(SolidColor::new(Vec3d::one())))));
+		objects.push(box2);
+		//objects.push(Arc::new(ConstantMedium::new(box2.clone(), 0.01, Arc::new(SolidColor::new(Vec3d::one())))));
 
-		scene.insert_object(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
-		scene
+		lights.push(Arc::new(XZRect::new(213.0, 343.0, 227.0, 332.0, 554.0, white.clone())));
+		world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
+
+		Self{camera, textures: HashMap::new(), materials: HashMap::new(), objects: Arc::new(world), lights: Arc::new(lights)}
 	}
 
 	pub fn chapter2() -> Self
@@ -520,6 +524,6 @@ impl Scene
 
 		world.push(Arc::new(BvhNode::new(objects, 0.0, 1.0)));
 
-		Self{camera, textures: HashMap::new(), materials: HashMap::new(), objects: world}
+		Self{camera, textures: HashMap::new(), materials: HashMap::new(), objects: Arc::new(world), lights: Arc::new(HittableList::new())}
 	}
 }

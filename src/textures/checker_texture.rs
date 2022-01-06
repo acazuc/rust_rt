@@ -3,6 +3,7 @@ use crate::math::vec::
 	Vec2d,
 	Vec3d,
 };
+use crate::scene::Scene;
 
 use std::sync::Arc;
 
@@ -20,6 +21,15 @@ impl CheckerTexture
 	{
 		Self{odd, even}
 	}
+
+	/*pub fn from(scene: &Scene, node: &roxmltree::Node) -> Self
+	{
+		Self
+		{
+			odd: scene.texture(Scene::parse_xml_child(node, "OddTexture").parse_xml_attr_str("name")),
+			even: scene.texture(Scene::parse_xml_child(node, "EvenTexture").parse_xml_attr_str("name")),
+		}
+	}*/
 }
 
 impl Texture for CheckerTexture

@@ -67,6 +67,16 @@ pub trait Hittable : Sync + Send
 
 		None
 	}
+
+	fn pdf_value(&self, _o: Vec3d, _v: Vec3d) -> f64
+	{
+		0.0
+	}
+
+	fn random(&self, _o: Vec3d) -> Vec3d
+	{
+		Vec3d::new(1.0, 0.0, 0.0)
+	}
 }
 
 pub struct HittableList
@@ -149,5 +159,15 @@ impl Hittable for HittableList
 		}
 
 		rec
+	}
+
+	fn pdf_value(&self, o: Vec3d, v: Vec3d) -> f64
+	{
+		self.objects[0].pdf_value(o, v)
+	}
+
+	fn random(&self, o: Vec3d) -> Vec3d
+	{
+		self.objects[0].random(o)
 	}
 }

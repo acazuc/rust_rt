@@ -28,7 +28,7 @@ impl Dielectric
 
 impl Material for Dielectric
 {
-	fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Vec3d, Ray)>
+	fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Vec3d, Ray, f64)>
 	{
 		let refraction_ratio;
 		if rec.front_face
@@ -63,7 +63,7 @@ impl Material for Dielectric
 			}
 		}
 
-		Some((Vec3d::newv(1.0), Ray::with_time(rec.p, direction, r.time())))
+		Some((Vec3d::newv(1.0), Ray::with_time(rec.p, direction, r.time()), 1.0))
 	}
 }
 

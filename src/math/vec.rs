@@ -145,6 +145,20 @@ impl Vec3d
 		-ret
 	}
 
+	pub fn random_cosine_direction() -> Self
+	{
+		let mut rng = rand::thread_rng();
+		let r1 = rng.gen_range(0.0..1.0);
+		let r2 = rng.gen_range(0.0..1.0);
+		let z = f64::sqrt(1.0 - r2);
+
+		let phi = 2.0 * std::f64::consts::PI * r1;
+		let x = f64::cos(phi) * f64::sqrt(r2);
+		let y = f64::sin(phi) * f64::sqrt(r2);
+
+		Self{v: [x, y, z]}
+	}
+
 	pub fn near_zero(self) -> bool
 	{
 		self.v.iter().any(|a| f64::abs(*a) < f64::EPSILON)
@@ -171,6 +185,26 @@ impl Vec3d
 	pub fn one() -> Self
 	{
 		Self::newv(1.0)
+	}
+
+	pub fn min(v1: Self, v2: Self) -> Self
+	{
+		Self::new
+		(
+			f64::min(v1.x(), v2.x()),
+			f64::min(v1.y(), v2.y()),
+			f64::min(v1.z(), v2.z())
+		)
+	}
+
+	pub fn max(v1: Self, v2: Self) -> Self
+	{
+		Self::new
+		(
+			f64::max(v1.x(), v2.x()),
+			f64::max(v1.y(), v2.y()),
+			f64::max(v1.z(), v2.z())
+		)
 	}
 }
 

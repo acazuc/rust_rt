@@ -23,10 +23,10 @@ impl Isotropic
 
 impl Material for Isotropic
 {
-	fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Vec3d, Ray)>
+	fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Vec3d, Ray, f64)>
 	{
 		let scattered = Ray::with_time(rec.p, Vec3d::random_in_unit_sphere(), r.time());
 		let attenuation = self.albedo.value(rec.uv, rec.p);
-		Some((attenuation, scattered))
+		Some((attenuation, scattered, 1.0))
 	}
 }
